@@ -154,8 +154,9 @@ int modsecurity_init(msc_engine *msce, apr_pool_t *mp) {
     curl_global_init(CURL_GLOBAL_ALL);
 #endif
     /* Serial audit log mutext */
-    rc = apr_global_mutex_create(&msce->auditlog_lock, NULL, APR_LOCK_DEFAULT, mp);
-    if (rc != APR_SUCCESS) {
+    msce->auditlog_lock = apr_pcalloc(mp, sizeof(struct waf_lock));
+    rc = Waf_createLock(msce->auditlog_lock, "auditlog_lock", strlen("auditlog_lock"), msc_waf_lock_owner);    
+    if (Waf_lock_isError(rc)) {
         //ap_log_error(APLOG_MARK, APLOG_ERR, rv, s, "mod_security: Could not create modsec_auditlog_lock");
         //return HTTP_INTERNAL_SERVER_ERROR;
         return -1;
@@ -163,76 +164,27 @@ int modsecurity_init(msc_engine *msce, apr_pool_t *mp) {
 
 #ifdef WAF_JSON_LOGGING_ENABLE
     /* Serial wafjson log mutext */
-    rc = apr_global_mutex_create(&msce->wafjsonlog_lock, NULL, APR_LOCK_DEFAULT, mp);
-    if (rc != APR_SUCCESS) {
+    msce->wafjsonlog_lock = apr_pcalloc(mp, sizeof(struct waf_lock));
+    rc = Waf_createLock(msce->wafjsonlog_lock, "wafjsonlog_lock", strlen("wafjsonlog_lock"), msc_waf_lock_owner);    
+    if (Waf_lock_isError(rc)) {
         //ap_log_error(APLOG_MARK, APLOG_ERR, rv, s, "mod_security: Could not create modsec_wafjsonlog_lock");
         //return HTTP_INTERNAL_SERVER_ERROR;
         return -1;
     }
 #endif
 
-#if !defined(MSC_TEST)
-#ifdef __SET_MUTEX_PERMS
-#if AP_SERVER_MAJORVERSION_NUMBER > 1 && AP_SERVER_MINORVERSION_NUMBER > 2
-    rc = ap_unixd_set_global_mutex_perms(msce->auditlog_lock);
-#else
-    rc = unixd_set_global_mutex_perms(msce->auditlog_lock);
-#endif
-    if (rc != APR_SUCCESS) {
-        // ap_log_error(APLOG_MARK, APLOG_ERR, rc, s, "mod_security: Could not set permissions on modsec_auditlog_lock; check User and Group directives");
-        // return HTTP_INTERNAL_SERVER_ERROR;
+    msce->geo_lock = apr_pcalloc(mp, sizeof(struct waf_lock));
+    rc = Waf_createLock(msce->geo_lock, "geo_lock", strlen("geo_lock"), msc_waf_lock_owner);    
+    if (Waf_lock_isError(rc)) {
         return -1;
     }
-#endif /* SET_MUTEX_PERMS */
-
-#ifdef WAF_JSON_LOGGING_ENABLE
-#ifdef __SET_MUTEX_PERMS
-#if AP_SERVER_MAJORVERSION_NUMBER > 1 && AP_SERVER_MINORVERSION_NUMBER > 2
-    rc = ap_unixd_set_global_mutex_perms(msce->wafjsonlog_lock);
-#else
-    rc = unixd_set_global_mutex_perms(msce->wafjsonlog_lock);
-#endif
-    if (rc != APR_SUCCESS) {
-        // ap_log_error(APLOG_MARK, APLOG_ERR, rc, s, "mod_security: Could not set permissions on modsec_wafjsonlog_lock; check User and Group directives");
-        // return HTTP_INTERNAL_SERVER_ERROR;
-        return -1;
-    }
-#endif /* SET_MUTEX_PERMS */
-#endif
-
-    rc = apr_global_mutex_create(&msce->geo_lock, NULL, APR_LOCK_DEFAULT, mp);
-    if (rc != APR_SUCCESS) {
-        return -1;
-    }
-
-#ifdef __SET_MUTEX_PERMS
-#if AP_SERVER_MAJORVERSION_NUMBER > 1 && AP_SERVER_MINORVERSION_NUMBER > 2
-    rc = ap_unixd_set_global_mutex_perms(msce->geo_lock);
-#else
-    rc = unixd_set_global_mutex_perms(msce->geo_lock);
-#endif
-    if (rc != APR_SUCCESS) {
-        return -1;
-    }
-#endif /* SET_MUTEX_PERMS */
 
 #ifdef GLOBAL_COLLECTION_LOCK
-    rc = apr_global_mutex_create(&msce->dbm_lock, NULL, APR_LOCK_DEFAULT, mp);
-    if (rc != APR_SUCCESS) {
+    msce->dbm_lock = apr_pcalloc(mp, sizeof(struct waf_lock));
+    rc = Waf_createLock(msce->dbm_lock, "dbm_lock", strlen("dbm_lock"), msc_waf_lock_owner);    
+    if (Waf_lock_isError(rc)) {
         return -1;
     }
-
-#ifdef __SET_MUTEX_PERMS
-#if AP_SERVER_MAJORVERSION_NUMBER > 1 && AP_SERVER_MINORVERSION_NUMBER > 2
-    rc = ap_unixd_set_global_mutex_perms(msce->dbm_lock);
-#else
-    rc = unixd_set_global_mutex_perms(msce->dbm_lock);
-#endif
-    if (rc != APR_SUCCESS) {
-        return -1;
-    }
-#endif /* SET_MUTEX_PERMS */
-#endif
 #endif
 
     return 1;
@@ -241,40 +193,32 @@ int modsecurity_init(msc_engine *msce, apr_pool_t *mp) {
 /**
  * Performs per-child (new process) initialisation.
  */
-void modsecurity_child_init(msc_engine *msce) {
+void modsecurity_child_init(apr_pool_t *mp, msc_engine *msce) {
     /* Need to call this once per process before any other XML calls. */
     xmlInitParser();
 
-    if (msce->auditlog_lock != NULL) {
-        apr_status_t rc = apr_global_mutex_child_init(&msce->auditlog_lock, NULL, msce->mp);
-        if (rc != APR_SUCCESS) {
-            // ap_log_error(APLOG_MARK, APLOG_ERR, rs, s, "Failed to child-init auditlog mutex");
-        }
+    if (msce->auditlog_lock == NULL) {
+        msce->auditlog_lock = apr_pcalloc(mp, sizeof(struct waf_lock));
     }
+    Waf_createLock(msce->auditlog_lock, "auditlog_lock", strlen("auditlog_lock"), msc_waf_lock_owner);
 
 #ifdef WAF_JSON_LOGGING_ENABLE
-    if (msce->wafjsonlog_lock != NULL) {
-        apr_status_t rc = apr_global_mutex_child_init(&msce->wafjsonlog_lock, NULL, msce->mp);
-        if (rc != APR_SUCCESS) {
-            // ap_log_error(APLOG_MARK, APLOG_ERR, rs, s, "Failed to child-init auditlog mutex");
-        }
+    if (msce->wafjsonlog_lock == NULL) {
+        msce->wafjsonlog_lock = apr_pcalloc(mp, sizeof(struct waf_lock));
     }
+    Waf_createLock(msce->wafjsonlog_lock, "wafjsonlog_lock", strlen("wafjsonlog_lock"), msc_waf_lock_owner);
 #endif
 
     if (msce->geo_lock != NULL) {
-        apr_status_t rc = apr_global_mutex_child_init(&msce->geo_lock, NULL, msce->mp);
-        if (rc != APR_SUCCESS) {
-            // ap_log_error(APLOG_MARK, APLOG_ERR, rs, s, "Failed to child-init geo mutex");
-        }
+        msce->geo_lock = apr_pcalloc(mp, sizeof(struct waf_lock));
     }
+    Waf_createLock(msce->geo_lock, "geo_lock", strlen("geo_lock"), msc_waf_lock_owner);
 
 #ifdef GLOBAL_COLLECTION_LOCK
-    if (msce->dbm_lock != NULL) {
-        apr_status_t rc = apr_global_mutex_child_init(&msce->dbm_lock, NULL, msce->mp);
-        if (rc != APR_SUCCESS) {
-            // ap_log_error(APLOG_MARK, APLOG_ERR, rs, s, "Failed to child-init dbm mutex");
-        }
+    if (msce->dbm_lock == NULL) {
+        msce->dbm_lock = apr_pcalloc(mp, sizeof(struct waf_lock));
     }
+    Waf_createLock(msce->dbm_lock, "dbm_lock", strlen("dbm_lock"), msc_waf_lock_owner);
 #endif
 
 }

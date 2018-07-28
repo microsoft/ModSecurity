@@ -95,8 +95,8 @@ TreeRoot DSOLOCAL *conn_write_state_suspicious_list = 0;
 #ifdef WAF_JSON_LOGGING_ENABLE
 char DSOLOCAL *msc_waf_resourceId = "";
 char DSOLOCAL *msc_waf_instanceId = "";
-char DSOLOCAL *msc_waf_lock_owner = "root";
 #endif
+char DSOLOCAL *msc_waf_lock_owner = "root";
 
 #if defined(WIN32) || defined(VERSION_NGINX)
 int (*modsecDropAction)(request_rec *r) = NULL;
@@ -833,7 +833,7 @@ static int hook_post_config(apr_pool_t *mp, apr_pool_t *mp_log, apr_pool_t *mp_t
  * Initialisation performed for every new child process.
  */
 static void hook_child_init(apr_pool_t *mp, server_rec *s) {
-    modsecurity_child_init(modsecurity);
+    modsecurity_child_init(mp, modsecurity);
 }
 
 /**
