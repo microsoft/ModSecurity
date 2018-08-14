@@ -206,16 +206,22 @@ static int multipart_parse_content_disposition(modsec_rec *msr, char *c_d_value)
             if (strcmp(name, "filename*") == 0)
             {
                 decoded_filename = rfc5987_decode(msr->mp, value);
+                if (!decoded_filename)
+                {
+                    msr_log(msr, 4, "Multipart: Could not decode extended filename parameter in RFC 5987 format: %s",
+                            log_escape_nq(msr->mp, value));
+                    return -16;
+                }
                 msr->multipart_filename = decoded_filename;
 
-                // Make sure to turn of INVALID quoting since RFC 5987 supports it.
+                // Make sure to turn of INVALID quoting since RFC 5987 expects quotes in the filename format it expects.
                 msr->mpd->flag_invalid_quoting = 0;
             }
             else
             {
                 decoded_filename = value;
                 validate_quotes(msr, value);
-                msr->multipart_filename = apr_pstrdup(msr->mp, value);
+                msr->multipart_filename = apr_pstrdup(msr->mp, decoded_filename);
             }
 
             if (msr->mpd->mpp->filename != NULL)
