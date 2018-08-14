@@ -1,4 +1,5 @@
-﻿*.obj
+﻿.vscode
+*.obj
 *.tlog
 *.log
 *.pdb
