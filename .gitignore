@@ -1,4 +1,6 @@
 ﻿.vscode
+*.swp
+*.stackdump
 *.obj
 *.tlog
 *.log
