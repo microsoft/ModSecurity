@@ -1791,8 +1791,9 @@ char *rfc5987_decode(apr_pool_t *mptmp, char *value)
 {
     const char utf8[] = "utf-8";
     const char iso88591[] = "iso-8859-1";
+    const char rfc5987Delimiter[] = "'";
     int len = strlen(value);
-    char *urlEncodedValue = strstr(value, "'");
+    char *urlEncodedValue = strstr(value, rfc5987Delimiter);
 
     if (!urlEncodedValue)
     {
@@ -1805,7 +1806,7 @@ char *rfc5987_decode(apr_pool_t *mptmp, char *value)
     {
         // Remove the leading single quotes.
         urlEncodedValue++;
-        urlEncodedValue = strstr(urlEncodedValue, "'");
+        urlEncodedValue = strstr(urlEncodedValue, rfc5987Delimiter);
 
         if (!urlEncodedValue)
         {
@@ -1828,10 +1829,6 @@ char *rfc5987_decode(apr_pool_t *mptmp, char *value)
         {
             return urlEncodedValue;
         }
-        else
-        {
-            return NULL;
-        }
     }
     else if (strncmp(value, iso88591, strlen(iso88591)) == 0)
     {
@@ -1853,21 +1850,10 @@ char *rfc5987_decode(apr_pool_t *mptmp, char *value)
                 utf8EncodedValue[outLen + 1] = '\0';
                 return utf8EncodedValue;
             }
-            else
-            {
-                return NULL;
-            }
         }
-        else
-        {
-            return NULL;
-        }
-    }
-    else
-    {
-        return NULL;
     }
 
+    // Error
     return NULL;
 }
 

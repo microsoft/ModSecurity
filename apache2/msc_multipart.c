@@ -214,7 +214,7 @@ static int multipart_parse_content_disposition(modsec_rec *msr, char *c_d_value)
                 }
                 msr->multipart_filename = decoded_filename;
 
-                // Make sure to turn of INVALID quoting since RFC 5987 expects quotes in the filename format it expects.
+                // Make sure to turn of INVALID quoting since RFC 5987 expects quotes in the filename format.
                 msr->mpd->flag_invalid_quoting = 0;
             }
             else
