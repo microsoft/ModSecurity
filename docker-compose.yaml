@@ -1,0 +1,37 @@
+version: "3"
+
+services:
+  autoconf:
+    image: asridhar/modsecurity:latest
+    build:
+      dockerfile: docker/Dockerfile
+      context: .
+    volumes:
+      - ./:/microsoft/modsecurity
+    working_dir: /microsoft/modsecurity
+    entrypoint: ./autogen.sh
+
+  configure:
+    image: asridhar/modsecurity:latest
+    build:
+      dockerfile: docker/Dockerfile
+      context: .
+    volumes:
+      - ./:/microsoft/modsecurity
+    working_dir: /microsoft/modsecurity
+    entrypoint: 
+      - ./configure
+      - CXXFLAGS=-std=c++11
+      - CFLAGS=-fPIC
+      - --enable-standalone-module
+      - --disable-mlogc
+
+  make:
+    image: asridhar/modsecurity:latest
+    build:
+      dockerfile: docker/Dockerfile
+      context: .
+    volumes:
+      - ./:/microsoft/modsecurity
+    working_dir: /microsoft/modsecurity
+    entrypoint: make
