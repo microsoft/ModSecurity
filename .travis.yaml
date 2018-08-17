@@ -1,9 +1,15 @@
+# We are going to run the build in a container. 
+# The reason we run the build in a container is that we have dependency on protobuf when we are building on Linux. 
+# Building protobuf as a build step is quite time consuming, so we want to package the protobuf as a container image with all the dependencies captured and run the build within this container.
+sudo: required
 language: c
-compiler:
-  - clang
-sudo: false # Container 14.04 based build.
-install: true
+services:
+  - docker
+
+install: 
+  - docker pull asridharn/modsecurity-build:latest
+
 script:
-  - autogen.sh
-  - configure  CXXFLAGS="-std=c++11" CFLAGS="-fPIC"  --enable-standalone-module --disable-mlogc
-  - make
+  - docker-compose run --rm autoconf
+  - docker-compose run --rm configure
+  - docker-compose run --rm build
