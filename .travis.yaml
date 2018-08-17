@@ -1,0 +1,9 @@
+language: c
+compiler:
+  - clang
+sudo: false # Container 14.04 based build.
+install: true
+script:
+  - autogen.sh
+  - configure  CXXFLAGS="-std=c++11" CFLAGS="-fPIC"  --enable-standalone-module --disable-mlogc
+  - make
