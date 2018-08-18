@@ -7,9 +7,9 @@ services:
   - docker
 
 install: 
-  - docker pull asridharn/modsecurity-build:latest
+  - docker pull asridharan/modsecurity:latest
 
 script:
   - docker-compose run --rm autoconf
   - docker-compose run --rm configure
-  - docker-compose run --rm build
+  - docker-compose run --rm make
