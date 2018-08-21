@@ -2,7 +2,7 @@ version: "3"
 
 services:
   autoconf:
-    image: appgw.azurecr.io/modsecurity:latest
+    image: appgwreg.azurecr.io/modsecurity:latest
     build:
       dockerfile: docker/Dockerfile
       context: .
@@ -12,7 +12,7 @@ services:
     entrypoint: ./autogen.sh
 
   configure:
-    image: appgw.azurecr.io/modsecurity:latest
+    image: appgwreg.azurecr.io/modsecurity:latest
     build:
       dockerfile: docker/Dockerfile
       context: .
@@ -27,7 +27,7 @@ services:
       - --disable-mlogc
 
   make:
-    image: appgw.azurecr.io/modsecurity:latest 
+    image: appgwreg.azurecr.io/modsecurity:latest 
     build:
       dockerfile: docker/Dockerfile
       context: .
