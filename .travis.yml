@@ -7,7 +7,9 @@ services:
   - docker
 
 install: 
-  - docker pull asridharan/modsecurity:latest
+# Setting up docker credentials.
+  - echo "$DOCKER_PASSWORD" | docker login appgw.azurecr.io -u "$DOCKER_USERNAME" --password-stdin
+  - docker pull appgw.azurecr.io/modsecurity:latest
 
 script:
   - docker-compose run --rm autoconf
