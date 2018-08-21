@@ -76,6 +76,8 @@ standalone/.libs/
 standalone/Makefile
 standalone/Makefile.in
 standalone/standalone.la
+standalone/.deps/
+standalone/.dirstamp
 tests/Makefile
 tests/Makefile.in
 tests/csv_rx-pm.pl
