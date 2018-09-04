@@ -11,52 +11,71 @@
 int test(
     const char *pattern_str, 
     const char *subject_str, 
-    int comp_opt,
-    int exec_opt,
-    int expect) {
+    int comp_opt,   // Options for compilation
+    int exec_opt,   // Options for execution
+    int comp_expect,// Expected result for compilation
+    int exec_expect // Expected result for execution
+    ) {
     
-    // pattern_str = "a$";
-    // subject_str = "b\nb";
     ri_regex_t regex = NULL;
     const char *log = NULL;
     int ovector[OVECCOUNT] = {0};
     int ret = 0;
 
-    // comp_opt = RI_COMP_MULTILINE | RI_COMP_CASELESS;
-    fprintf(stderr, "TEST START \n\tpattern(%s)\n\tsubject(%s)\n\tcompile option(%d)\n\texection option(%d)\n\texpect(%d)\n", 
-        pattern_str, 
-        subject_str, 
-        comp_opt, 
-        exec_opt,
-        expect);
+    fprintf(stderr, 
+            "TEST START\n\t"                      
+            "pattern(%s)\n\t"                    
+            "subject(%s)\n\t"                    
+            "compile option(%d)\n\t"              
+            "exection option(%d)\n\t"             
+            "expected compilation result(%d)\n\t" 
+            "expected execution result(%d)\n", 
+            pattern_str, 
+            subject_str, 
+            comp_opt, 
+            exec_opt,
+            comp_expect,
+            exec_expect);
     ri_set_log_level(RI_LOG_DEBUG);
 
     ret = ri_create(&regex, pattern_str, comp_opt, NULL,  NULL, &log);
-    if (ret != RI_SUCCESS) {
-        fprintf(stderr, "%s\n", log);
+    if (ret != comp_expect) {
+        fprintf(stderr, "Unexpected compilation result: expect(%d) get(%d)\n", comp_expect, ret);
         goto test_error;
+
+    // Get compilation error as expected.
+    } else if (ret != RI_SUCCESS) {
+        goto test_pass;
     }
+
+    //if (ret != RI_SUCCESS) {
+    //    fprintf(stderr, "%s\n", log);
+    //    goto test_error;
+    //}
 
     ret = ri_exec(regex, subject_str, strlen(subject_str), 0, exec_opt, NULL, ovector, OVECCOUNT, NULL);
     if (ret < 0) {
         fprintf(stderr, "%s\n", ri_get_error_msg(ret));
     }
-    if (ret != expect) {
-        fprintf(stderr, "FAIL get(%d)\n", ret);
+
+    if (ret != exec_expect) {
+        fprintf(stderr, "Unexpected execution result: expect(%d) get(%d)\n", exec_expect, ret);
         goto test_error;
     }
+
+test_pass:
     if(regex != NULL) {
         ri_free(regex);
         regex = NULL;
     }
-    fprintf(stderr, "TEST FINISH\n");
+    fprintf(stderr, "TEST PASS\n");
     return 0;
 
 test_error:
     if (regex) {
         ri_free(regex);
     }
-    fprintf(stderr, "TEST FINISH\n");
+    fprintf(stderr, "TEST FAIL\n");
     return -1;
 }
 
@@ -64,17 +83,17 @@ int main() {
     ri_init();
 
     // Normal match
-    if (test("abc", "abc", RI_COMP_DEFAULT, RI_EXEC_DEFAULT, 1) != 0) {
+    if (test("abc", "abc", RI_COMP_DEFAULT, RI_EXEC_DEFAULT, RI_SUCCESS, 1) != 0) {
         goto exit_error;
     }
     
     // Normal un-match
-    if (test("def", "abc", RI_COMP_DEFAULT, RI_EXEC_DEFAULT, -1) != 0) {
+    if (test("def", "abc", RI_COMP_DEFAULT, RI_EXEC_DEFAULT, RI_SUCCESS, -1) != 0) {
         goto exit_error;
     }
 
     // Compile error
-    if (test("{abc(:", "abc", RI_COMP_DEFAULT, RI_EXEC_DEFAULT, -1) != -1) {
+    if (test("{abc(:", "abc", RI_COMP_DEFAULT, RI_EXEC_DEFAULT, -4353, -1) != 0) {
         goto exit_error;
     }
 
@@ -83,12 +102,13 @@ int main() {
         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 
         RI_COMP_DEFAULT, 
         RI_EXEC_DEFAULT,
+        RI_SUCCESS,
         1) != 0) {
         goto exit_error;
     }
 
     // Newline support
-    if (test("b$", "b\nb", RI_COMP_MULTILINE | RI_COMP_CASELESS, RI_EXEC_DEFAULT, 1) != 0) {
+    if (test("b$", "b\nb", RI_COMP_MULTILINE | RI_COMP_CASELESS, RI_EXEC_DEFAULT, RI_SUCCESS, 1) != 0) {
         goto exit_error;
     }
 
