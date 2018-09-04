@@ -107,6 +107,16 @@ int main() {
         goto exit_error;
     }
 
+    // A challenging case for PCRE
+    if (test("a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?a?aaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 
+        RI_COMP_DEFAULT, 
+        RI_EXEC_DEFAULT,
+        RI_SUCCESS,
+        1) != 0) {
+        goto exit_error;
+    }
+
     // Newline support
     if (test("b$", "b\nb", RI_COMP_MULTILINE | RI_COMP_CASELESS, RI_EXEC_DEFAULT, RI_SUCCESS, 1) != 0) {
         goto exit_error;
