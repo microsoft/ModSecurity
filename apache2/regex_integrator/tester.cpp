@@ -117,8 +117,8 @@ int main() {
         goto exit_error;
     }
 
-    // Newline support
-    if (test("b$", "b\nb", RI_COMP_MULTILINE | RI_COMP_CASELESS, RI_EXEC_DEFAULT, RI_SUCCESS, 1) != 0) {
+    // Multi-line support
+    if (test("b$", "b\nb", RI_COMP_MULTILINE, RI_EXEC_DEFAULT, RI_SUCCESS, 1) != 0) {
         goto exit_error;
     }
 
