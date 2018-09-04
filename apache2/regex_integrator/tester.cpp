@@ -122,6 +122,11 @@ int main() {
         goto exit_error;
     }
 
+    // Caseless support
+    if (test("ABC", "abc", RI_COMP_CASELESS, RI_EXEC_DEFAULT, RI_SUCCESS, 1) != 0) {
+        goto exit_error;
+    }
+
     // Capture groups
     if (test("(a+b)(c+d)(e+f)", 
         "abcdef", 
