@@ -122,6 +122,36 @@ int main() {
         goto exit_error;
     }
 
+    // Capture groups
+    if (test("(a+b)(c+d)(e+f)", 
+        "abcdef", 
+        RI_COMP_DEFAULT, 
+        RI_EXEC_DEFAULT,
+        RI_SUCCESS,
+        4) != 0) {
+        goto exit_error;
+    }
+
+    // No enough space to store capture groups
+    if (test("(a?)(b?)(c?)(d?)(e?)(f?)(g?)(h?)(i?)(j?)(k?)", 
+        "abcdefghijk", 
+        RI_COMP_DEFAULT, 
+        RI_EXEC_DEFAULT,
+        RI_SUCCESS,
+        0) != 0) {
+        goto exit_error;
+    }    
+
+    // Not empty match
+    if (test("a?b?c?d?e?", 
+        "ffff", 
+        RI_COMP_DEFAULT, 
+        RI_EXEC_NOTEMPTY,
+        RI_SUCCESS,
+        -1) != 0) {
+        goto exit_error;
+    }       
+
     ri_release();
     return 0;
 
