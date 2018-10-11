@@ -156,7 +156,7 @@ ngx_buf_t * apr_bucket_to_ngx_buf(apr_bucket *e, ngx_pool_t *pool) {
 ngx_int_t
 move_chain_to_brigade(ngx_chain_t *chain, apr_bucket_brigade *bb, ngx_pool_t *pool, ngx_int_t last_buf) {
     apr_bucket         *e;
-    ngx_chain_t        *cl;
+    //ngx_chain_t        *cl;
 
     while (chain) {
         e = ngx_buf_to_apr_bucket(chain->buf, bb->p, bb->bucket_alloc);
@@ -168,12 +168,13 @@ move_chain_to_brigade(ngx_chain_t *chain, apr_bucket_brigade *bb, ngx_pool_t *po
         if (chain->buf->last_buf) {
             e = apr_bucket_eos_create(bb->bucket_alloc);
             APR_BRIGADE_INSERT_TAIL(bb, e);
-            chain->buf->last_buf = 0;
+            //chain->buf->last_buf = 0;
             return NGX_OK;
         }
-        cl = chain;
+
+        //cl = chain;
         chain = chain->next;
-        ngx_free_chain(pool, cl);
+        //ngx_free_chain(pool, cl);
     }
 
     if (last_buf) {
