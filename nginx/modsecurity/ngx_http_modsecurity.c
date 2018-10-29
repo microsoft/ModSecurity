@@ -76,6 +76,8 @@ static int ngx_http_modsecurity_save_headers_out_visitor(void *data, const char 
 
 static ngx_str_t thread_pool_name = ngx_string("default");
 
+ngx_thread_mutex_t mtx;
+
 
 /* command handled by the module */
 static ngx_command_t  ngx_http_modsecurity_commands[] =  {
@@ -893,7 +895,10 @@ extern apr_pool_t *pool;
 static void *
 modsec_pcre_malloc(size_t size)
 {
-    return apr_palloc(pool, size);
+    ngx_thread_mutex_lock(&mtx, NULL);
+    void* m = apr_palloc(pool, size);
+    ngx_thread_mutex_unlock(&mtx, NULL);
+    return m;
 }
 
 static void
@@ -965,6 +970,13 @@ ngx_http_modsecurity_init(ngx_conf_t *cf)
     if (thread_pool == NULL) {
         return NGX_ERROR;
     }
+
+    if (ngx_thread_mutex_create(&mtx, cf->log) != NGX_OK) {
+        return NGX_ERROR;
+    }
+
+    extern pthread_mutex_t msc_pregcomp_ex_mtx;
+    pthread_mutex_init(&msc_pregcomp_ex_mtx, NULL);
 
     return NGX_OK;
 }
