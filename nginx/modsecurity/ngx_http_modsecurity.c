@@ -14,7 +14,6 @@
 
 #include <ngx_http.h>
 #include <apr_bucket_nginx.h>
-#include <ngx_pool_context.h>
 
 #include <apr_base64.h>
 
