@@ -42,10 +42,10 @@ typedef struct {
     unsigned             complete;
 
     int                  thread_running;
-    int                  done;
-    int                  code;
+    int                  status_code;
 } ngx_http_modsecurity_ctx_t;
 
+#define STATUS_CODE_NOT_SET -1000
 
 typedef struct {
     ngx_http_request_t *r;
@@ -1000,42 +1000,38 @@ ngx_http_modsecurity_thread_func(void *data, ngx_log_t *log)
     ngx_http_request_t *r = thread_ctx->r;
 
     ngx_http_modsecurity_ctx_t* mod_ctx = ngx_http_get_module_ctx(r, ngx_http_modsecurity);
-    mod_ctx->done = 1;
 
     // Load request to request rec
     if (ngx_http_modsecurity_load_request(r) != NGX_OK
         || ngx_http_modsecurity_load_headers_in(r) != NGX_OK) {
 
-        mod_ctx->code = NGX_HTTP_INTERNAL_SERVER_ERROR;
+        mod_ctx->status_code = NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return;
     }
 
     // Processing request headers
     ngx_int_t rc = ngx_http_modsecurity_status(r, modsecProcessRequestHeaders(mod_ctx->req));
 
     if (rc != NGX_DECLINED) {
-        mod_ctx->code = rc;
+        mod_ctx->status_code = rc;
         return;
     }
 
     if (modsecContextState(mod_ctx->req) == MODSEC_DISABLED) {
-        mod_ctx->code = NGX_DECLINED;
+        mod_ctx->status_code = NGX_DECLINED;
         return;
     }
 
     if (modsecIsRequestBodyAccessEnabled(mod_ctx->req) && (r->headers_in.content_length || r->headers_in.chunked)) {
         if (ngx_http_modsecurity_load_request_body(r) != NGX_OK) {
-            mod_ctx->code = NGX_HTTP_INTERNAL_SERVER_ERROR;
+            mod_ctx->status_code = NGX_HTTP_INTERNAL_SERVER_ERROR;
             return;
         }
     }
 
     // The name of modsecProcessRequestBody is a bit misleading. This function call is needed even to just process GET args.
     rc = ngx_http_modsecurity_status(r, modsecProcessRequestBody(mod_ctx->req));
-
-    if (rc != NGX_DECLINED) {
-        mod_ctx->code = rc;
-        return;
-    }
+    mod_ctx->status_code = rc;
 }
 
 
@@ -1136,24 +1132,24 @@ ngx_http_modsecurity_handler(ngx_http_request_t *r)
         ngx_http_set_ctx(r, ctx, ngx_http_modsecurity);
     }
 
+    // Sometimes Nginx calls ngx_http_modsecurity_handler multiple times for the same request, after a worker thread has already been started. This is to guard against it.
     if (ctx->thread_running) {
         return NGX_DONE;
     }
 
-    if (ctx->done) {
-        if (ctx->code) {
-            return ctx->code;
+    if (ctx->status_code != STATUS_CODE_NOT_SET) {
+        if (ctx->status_code > 0) {
+            return ctx->status_code;
         }
 
         // Request must be routed to the next handler
         return NGX_DECLINED;
     }
 
+    ctx->thread_running = 1;
     if (ngx_http_modsecurity_task_offload(r) != NGX_OK) {
         return NGX_ERROR;
     }
-
-    ctx->thread_running = 1;
 
     return NGX_DONE;
 }
@@ -1271,6 +1267,8 @@ ngx_http_modsecurity_create_ctx(ngx_http_request_t *r)
     if (ctx->brigade == NULL) {
         return NULL;
     }
+
+    ctx->status_code = STATUS_CODE_NOT_SET;
 
     return ctx;
 }
