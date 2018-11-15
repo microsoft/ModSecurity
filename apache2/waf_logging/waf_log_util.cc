@@ -184,8 +184,5 @@ void init_appgw_rules_id_hash() {
 }
 
 bool rule_is_mandatory(int rule_id) {
-	if (appgw_ruleid_hash.find(rule_id) == appgw_ruleid_hash.end())
-		return true;
-	else
-		return false;
+	return (appgw_ruleid_hash.find(rule_id) == appgw_ruleid_hash.end());
 }
