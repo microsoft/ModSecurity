@@ -10,7 +10,7 @@
 
 #define WAF_ACTION_BLOCKED "Blocked"
 #define WAF_ACTION_DETECTED "Detected"
-#define WAF_ACTION_ANOMOLY_INCREASE "Anomaly Score Increased"
+#define WAF_ACTION_MATCHED "Matched"
 
 #define RULE_TYPE_OWASP_CRS "OWASP_CRS"
 

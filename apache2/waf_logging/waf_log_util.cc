@@ -59,7 +59,7 @@ void set_waf_format(waf_format::Waf_Format* waf_format, char* resourceId, char* 
 		is_mandatory = rule_is_mandatory(tmpid);
 
 		if (ruleSetVersion[0] != '2' && !is_mandatory)
-			properties->set_action(WAF_ACTION_ANOMOLY_INCREASE);
+			properties->set_action(WAF_ACTION_MATCHED);
 		else {
 			switch (action) {
 			case 1:
