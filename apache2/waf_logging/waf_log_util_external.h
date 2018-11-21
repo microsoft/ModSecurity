@@ -3,6 +3,8 @@
 
 #define WAF_LOG_UTIL_FAILED -1
 #define WAF_LOG_UTIL_SUCCESS 0
+#define MODSEC_MODE_DETECT 1
+#define MODSEC_MODE_PREVENT 2
 #define WAF_RULESET_PREFIX "/RuleSets/"
 #define WAF_LOG_UTIL_FILE "waf_json.log"
 #define WAF_LOG_UTIL_OPERATION_NAME "ApplicationGatewayFirewall"

@@ -54,7 +54,7 @@ void set_waf_format(waf_format::Waf_Format* waf_format, char* resourceId, char* 
     }
     
 	bool is_mandatory = false;
-	if (strcmp(ruleId, RULE_TYPE_OWASP_CRS)) {
+    try {
 		int tmpid = atoi(ruleId+1);
 		is_mandatory = rule_is_mandatory(tmpid);
 
@@ -62,10 +62,10 @@ void set_waf_format(waf_format::Waf_Format* waf_format, char* resourceId, char* 
 			properties->set_action(WAF_ACTION_MATCHED);
 		else {
 			switch (action) {
-			case 1:
+			case MODSEC_MODE_DETECT:
 				properties->set_action(WAF_ACTION_DETECTED);
 				break;
-			case 2:
+			case MODSEC_MODE_PREVENT:
 				properties->set_action(WAF_ACTION_BLOCKED);
 				break;
 			default:
@@ -73,7 +73,7 @@ void set_waf_format(waf_format::Waf_Format* waf_format, char* resourceId, char* 
 			}
 		}
 	}
-	else {
+    catch (...) {
 		properties->set_action("");
 	}
     
@@ -127,7 +127,7 @@ void set_waf_format(waf_format::Waf_Format* waf_format, char* resourceId, char* 
 
 	if (waf_unique_id != NULL) {
 		waf_unique_id[strlen(waf_unique_id) - 1] = '\0';
-		properties->set_transaction(waf_unique_id+1);
+		properties->set_transactionid(waf_unique_id+1);
 	}
 }
 

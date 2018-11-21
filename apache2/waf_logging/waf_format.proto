@@ -27,7 +27,7 @@ message Properties {
   optional SiteType site = 10;
   optional Details details = 11;
   optional string hostname = 12;
-  optional string transaction = 13;
+  optional string transactionId = 13;
 }
 
 message Waf_Format {
