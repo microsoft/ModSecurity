@@ -495,10 +495,10 @@ ngx_http_modsecurity_load_request_body(ngx_http_request_t *r)
 
     if (r->request_body == NULL || r->request_body->bufs == NULL) {
 
-        return copy_chain_to_brigade(NULL, ctx->brigade, r->pool, 1);
+        return copy_chain_to_brigade(NULL, ctx->brigade, 1);
     }
 
-    if (copy_chain_to_brigade(r->request_body->bufs, ctx->brigade, r->pool, 1) != NGX_OK) {
+    if (copy_chain_to_brigade(r->request_body->bufs, ctx->brigade, 1) != NGX_OK) {
         return NGX_ERROR;
     }
 
