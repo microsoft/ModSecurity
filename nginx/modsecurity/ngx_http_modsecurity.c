@@ -50,7 +50,7 @@ typedef struct {
 
 typedef struct {
     ngx_http_request_t *r;
-} ngx_http_modsecurity_thread_ctx_t;
+} ngx_http_modsecurity_prevention_thread_ctx_t;
 
 
 /*
@@ -1010,11 +1010,11 @@ ngx_http_modsecurity_init_process(ngx_cycle_t *cycle)
 
 
 static void
-ngx_http_modsecurity_thread_func(void *data, ngx_log_t *log)
+ngx_http_modsecurity_prevention_thread_func(void *data, ngx_log_t *log)
 {
     // Executed in a separate thread
 
-    ngx_http_modsecurity_thread_ctx_t *thread_ctx = data;
+    ngx_http_modsecurity_prevention_thread_ctx_t *thread_ctx = data;
     ngx_http_request_t *r = thread_ctx->r;
 
     ngx_http_modsecurity_ctx_t* mod_ctx = ngx_http_get_module_ctx(r, ngx_http_modsecurity);
@@ -1057,7 +1057,7 @@ ngx_http_modsecurity_thread_func(void *data, ngx_log_t *log)
 
 
 static void
-ngx_http_modsecurity_thread_completion(ngx_event_t *ev)
+ngx_http_modsecurity_prevention_thread_completion(ngx_event_t *ev)
 {
     // executed in nginx event loop after thread task is done, in order to pick up and continue processing request
 
@@ -1075,12 +1075,12 @@ ngx_http_modsecurity_thread_completion(ngx_event_t *ev)
 
 
 static ngx_int_t
-ngx_http_modsecurity_task_offload(ngx_http_request_t *r)
+ngx_http_modsecurity_prevention_task_offload(ngx_http_request_t *r)
 {
-    ngx_http_modsecurity_thread_ctx_t *thread_ctx;
+    ngx_http_modsecurity_prevention_thread_ctx_t *thread_ctx;
     ngx_thread_task_t *task;
 
-    task = ngx_thread_task_alloc(r->pool, sizeof(ngx_http_modsecurity_thread_ctx_t));
+    task = ngx_thread_task_alloc(r->pool, sizeof(ngx_http_modsecurity_prevention_thread_ctx_t));
     if (task == NULL) {
         return NGX_ERROR;
     }
@@ -1088,8 +1088,8 @@ ngx_http_modsecurity_task_offload(ngx_http_request_t *r)
     thread_ctx = task->ctx;
     thread_ctx->r = r;
 
-    task->handler = ngx_http_modsecurity_thread_func;
-    task->event.handler = ngx_http_modsecurity_thread_completion;
+    task->handler = ngx_http_modsecurity_prevention_thread_func;
+    task->event.handler = ngx_http_modsecurity_prevention_thread_completion;
     task->event.data = r;
 
     ngx_thread_pool_t* thread_pool = ngx_thread_pool_get((ngx_cycle_t *)ngx_cycle, &thread_pool_name);
@@ -1168,7 +1168,7 @@ ngx_http_modsecurity_handler(ngx_http_request_t *r)
     }
 
     ctx->thread_running = 1;
-    if (ngx_http_modsecurity_task_offload(r) != NGX_OK) {
+    if (ngx_http_modsecurity_prevention_task_offload(r) != NGX_OK) {
         return NGX_ERROR;
     }
 
