@@ -366,10 +366,8 @@ ngx_http_modsecurity_load_request_body(ngx_http_request_t *r)
 }
 
 static ngx_inline ngx_int_t
-ngx_http_modsecurity_status(ngx_http_request_t *r, int status)
+ngx_http_modsecurity_status(int status)
 {
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "ModSecurity: status %d", status);
-
     if (status == DECLINED || status == APR_SUCCESS) {
         return NGX_DECLINED;
     }
@@ -564,7 +562,9 @@ ngx_http_modsecurity_thread_func(void *data, ngx_log_t *log)
     }
 
     // Processing request headers
-    ngx_int_t rc = ngx_http_modsecurity_status(r, modsecProcessRequestHeaders(mod_ctx->req));
+    ngx_int_t rc = modsecProcessRequestHeaders(mod_ctx->req);
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "ModSecurity process headers: status %d", rc);
+    rc = ngx_http_modsecurity_status(rc);
 
     if (rc != NGX_DECLINED) {
         mod_ctx->status_code = rc;
@@ -584,8 +584,9 @@ ngx_http_modsecurity_thread_func(void *data, ngx_log_t *log)
     }
 
     // The name of modsecProcessRequestBody is a bit misleading. This function call is needed even to just process GET args.
-    rc = ngx_http_modsecurity_status(r, modsecProcessRequestBody(mod_ctx->req));
-    mod_ctx->status_code = rc;
+    rc = modsecProcessRequestBody(mod_ctx->req);
+    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "ModSecurity process body: status %d", rc);
+    mod_ctx->status_code = ngx_http_modsecurity_status(rc);
 }
 
 
