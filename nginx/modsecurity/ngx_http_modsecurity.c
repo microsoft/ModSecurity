@@ -51,6 +51,12 @@ typedef struct {
     ngx_http_request_t *r;
 } ngx_http_modsecurity_prevention_thread_ctx_t;
 
+typedef struct {
+    conn_rec            *connection;
+    request_rec         *req;
+
+    apr_bucket_brigade  *brigade;
+} ngx_http_modsecurity_detection_thread_ctx_t;
 
 /*
 ** Module's registred function/handlers.
@@ -133,6 +139,26 @@ static inline char *
 dup_ngx_str_to_apr(apr_pool_t *pool, ngx_str_t *src)
 {
     return apr_pstrmemdup(pool, (char *)src->data, src->len);
+}
+
+/*
+ * Helper to allocate a thread task using an Apache pool.
+ * This is useful when the background task can outive the Nginx request
+ * it is initiated for.
+ */
+ngx_thread_task_t *
+apr_thread_task_alloc(apr_pool_t *pool, size_t size)
+{
+    ngx_thread_task_t  *task;
+
+    task = apr_palloc(pool, sizeof(ngx_thread_task_t) + size);
+    if (task == NULL) {
+        return NULL;
+    }
+
+    task->ctx = task + 1;
+
+    return task;
 }
 
 static inline int
@@ -608,6 +634,45 @@ ngx_http_modsecurity_prevention_thread_completion(ngx_event_t *ev)
 }
 
 
+static void
+ngx_http_modsecurity_detection_thread_func(void *data, ngx_log_t *log)
+{
+    // Executed in a separate thread
+    ngx_http_modsecurity_detection_thread_ctx_t *thread_ctx = data;
+
+    // Processing request headers
+    ngx_int_t rc = ngx_http_modsecurity_status(modsecProcessRequestHeaders(thread_ctx->req));
+    if (rc != NGX_DECLINED) {
+        return;
+    }
+
+    if (modsecContextState(thread_ctx->req) == MODSEC_DISABLED) {
+        return;
+    }
+
+    // The name of modsecProcessRequestBody is a bit misleading. This function call is needed even to just process GET args.
+    modsecProcessRequestBody(thread_ctx->req);
+}
+
+
+static void
+ngx_http_modsecurity_detection_thread_completion(ngx_event_t *ev)
+{
+    // executed in nginx event loop after thread task is done, in order to pick up and continue processing request
+    ngx_http_modsecurity_detection_thread_ctx_t *ctx = ev->data;
+
+    request_rec *req = ctx->req;
+    conn_rec *connection = ctx->connection;
+
+    if (req != NULL) {
+        modsecFinishRequest(req);
+    }
+    if (connection != NULL) {
+        modsecFinishConnection(connection);
+    }
+}
+
+
 static ngx_int_t
 ngx_http_modsecurity_prevention_task_offload(ngx_http_request_t *r)
 {
@@ -637,6 +702,48 @@ ngx_http_modsecurity_prevention_task_offload(ngx_http_request_t *r)
     return NGX_OK;
 }
 
+static ngx_int_t
+ngx_http_modsecurity_detection_task_offload(ngx_http_request_t *r)
+{
+    ngx_http_modsecurity_ctx_t *ctx = ngx_http_get_module_ctx(r, ngx_http_modsecurity);
+    request_rec *req = ctx->req;
+
+    // Load request to request rec
+    if (ngx_http_modsecurity_load_request(r) != NGX_OK ||
+            ngx_http_modsecurity_load_headers_in(r) != NGX_OK) {
+        return NGX_ERROR;
+    }
+
+    if (modsecIsRequestBodyAccessEnabled(req) && (r->headers_in.content_length || r->headers_in.chunked)) {
+        if (ngx_http_modsecurity_load_request_body(r) != NGX_OK) {
+            return NGX_ERROR;
+        }
+    }
+
+    ngx_thread_task_t *task = apr_thread_task_alloc(req->pool, sizeof(ngx_http_modsecurity_detection_thread_ctx_t));
+    if (task == NULL) {
+        return NGX_ERROR;
+    }
+
+    ngx_http_modsecurity_detection_thread_ctx_t *thread_ctx = task->ctx;
+    thread_ctx->connection = ctx->connection;
+    ctx->connection = NULL;
+    thread_ctx->req = ctx->req;
+    ctx->req = NULL;
+    thread_ctx->brigade = ctx->brigade;
+    ctx->brigade = NULL;
+
+    task->handler = ngx_http_modsecurity_detection_thread_func;
+    task->event.handler = ngx_http_modsecurity_detection_thread_completion;
+    task->event.data = thread_ctx;
+
+    ngx_thread_pool_t* thread_pool = ngx_thread_pool_get((ngx_cycle_t *)ngx_cycle, &thread_pool_name);
+    if (ngx_thread_task_post(thread_pool, task) != NGX_OK) {
+        return NGX_ERROR;
+    }
+
+    return NGX_OK;
+}
 
 static void
 ngx_http_modsecurity_body_handler(ngx_http_request_t *r)
@@ -698,6 +805,15 @@ ngx_http_modsecurity_handler(ngx_http_request_t *r)
         }
 
         // Request must be routed to the next handler
+        return NGX_DECLINED;
+    }
+
+    /* When in detection mode, don't wait for background task to complete because it won't affect the request status */
+    if (cf->config->is_enabled == MODSEC_DETECTION_ONLY) {
+        if (ngx_http_modsecurity_detection_task_offload(r) != NGX_OK) {
+            return NGX_ERROR;
+        }
+
         return NGX_DECLINED;
     }
 
