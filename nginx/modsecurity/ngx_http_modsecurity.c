@@ -795,7 +795,9 @@ ngx_http_modsecurity_create_ctx(ngx_http_request_t *r)
 
     ctx->req = modsecNewRequest(ctx->connection, cf->config);
 
-    apr_table_setn(ctx->req->notes, NOTE_NGINX_REQUEST_CTX, (const char *) ctx);
+    if (cf->config->is_enabled != MODSEC_DETECTION_ONLY) {
+        apr_table_setn(ctx->req->notes, NOTE_NGINX_REQUEST_CTX, (const char *)ctx);
+    }
     apr_generate_random_bytes(salt, TXID_SIZE);
 
     txid = apr_pcalloc (ctx->req->pool, TXID_SIZE);
