@@ -6,6 +6,12 @@ language: c
 services:
   - docker
 
+# The iis_maintenance branch is only used for maintaining ModSecurity for IIS.
+# As such, it should not be built on Linux.
+branches:
+  except:
+    - iis_maintenance
+
 install: 
 # Setting up docker credentials.
   - echo "$DOCKER_PASSWORD" | docker login appgwreg.azurecr.io -u "$DOCKER_USERNAME" --password-stdin
