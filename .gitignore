@@ -69,10 +69,11 @@ build/ltversion.m4
 build/lt~obsolete.m4
 build/missing
 build/test-driver
+build/compile
 config.status
 configure
-doc/Makefile.in                                
-ext/Makefile.in                                    
+doc/Makefile.in
+ext/Makefile.in
 libtool
 mlogc/Makefile.in
 standalone/.libs/
@@ -91,3 +92,4 @@ tests/run-unit-tests.pl
 tools/Makefile
 tools/Makefile.in
 tools/rules-updater.pl
+nginx/modsecurity/config
