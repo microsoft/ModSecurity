@@ -37,7 +37,7 @@ Makefile
 Makefile.in
 aclocal.m4
 alp2/Makefile.in
-apache2/.dirstamp                                  
+apache2/.dirstamp
 apache2/Makefile
 apache2/Makefile.in
 apache2/ag_mdb/.deps/
@@ -51,7 +51,6 @@ apache2/waf_lock/.deps/
 apache2/waf_lock/.dirstamp
 apache2/waf_logging/.deps/
 apache2/waf_logging/.dirstamp
-apache2/waf_logging/waf_format.pb.h
 
 apache2/waf_logging/waf_format.pb.cc
 autom4te.cache/
