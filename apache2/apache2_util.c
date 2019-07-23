@@ -18,7 +18,7 @@
 #include "util_script.h"
 
 #ifdef WAF_JSON_LOGGING_ENABLE
-#include "waf_log_util_external.h"
+#include "waf_log_util.h"
 #include "waf_lock_external.h"
 #include "string.h"
 #endif
@@ -319,8 +319,6 @@ static int write_file_with_lock(struct waf_lock* lock, apr_file_t* fd, char* str
  * send all waf fields in json format to a file.
  */
 static void send_waf_log(struct waf_lock* lock, apr_file_t* fd, const char* str1, const char* ip_port, const char* uri, int mode, const char* hostname, char* unique_id, request_rec *r) {
-    int rc = 0;
-    char* json_str;
     char waf_filename[1024] = "";
     char waf_line[1024] = "";
     char waf_id[1024] = "";
@@ -346,8 +344,8 @@ static void send_waf_log(struct waf_lock* lock, apr_file_t* fd, const char* str1
     get_short_filename(waf_filename);
     get_ruleset_type_version(waf_ruleset_info, waf_ruleset_type, waf_ruleset_version); 
 
-    rc = generate_json(&json_str, msc_waf_resourceId, WAF_LOG_UTIL_OPERATION_NAME, WAF_LOG_UTIL_CATEGORY, msc_waf_instanceId, waf_ip, waf_port, uri, waf_ruleset_type, waf_ruleset_version, waf_id, waf_message, mode, 0, waf_detail_message, waf_data, waf_filename, waf_line, hostname, waf_unique_id);
-    if (rc == WAF_LOG_UTIL_FAILED) {
+    char* json_str = generate_json(msc_waf_resourceId, WAF_LOG_UTIL_OPERATION_NAME, WAF_LOG_UTIL_CATEGORY, msc_waf_instanceId, waf_ip, waf_port, uri, waf_ruleset_type, waf_ruleset_version, waf_id, waf_message, mode, 0, waf_detail_message, waf_data, waf_filename, waf_line, hostname, waf_unique_id);
+    if (!json_str) {
 #if AP_SERVER_MAJORVERSION_NUMBER > 1 && AP_SERVER_MINORVERSION_NUMBER > 2
        ap_log_rerror(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, r,
             "ModSecurity: can't print json log");
@@ -358,7 +356,7 @@ static void send_waf_log(struct waf_lock* lock, apr_file_t* fd, const char* str1
         return;
     }
 
-    rc = write_file_with_lock(lock, fd, json_str);
+    int rc = write_file_with_lock(lock, fd, json_str);
     if (rc == WAF_LOG_UTIL_FAILED) {
 #if AP_SERVER_MAJORVERSION_NUMBER > 1 && AP_SERVER_MINORVERSION_NUMBER > 2
        ap_log_rerror(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, r,
@@ -476,11 +474,11 @@ static void internal_log_ex(request_rec *r, directory_config *dcfg, modsec_rec *
                             "ModSecurity not able to reopen %s file", WAF_LOG_UTIL_FILE);
                 #endif
             }
-            
+
             msc_waf_log_reopened = 0;
         }
 
-        send_waf_log(msr->modsecurity->wafjsonlog_lock, msc_waf_log_fd, str1, r->useragent_ip ? r->useragent_ip : r->connection->client_ip, log_escape(msr->mp, r->uri), dcfg->is_enabled, (char*)msr->hostname, unique_id, r);
+        send_waf_log(msr->modsecurity->wafjsonlog_lock, msc_waf_log_fd, str1, r->useragent_ip ? r->useragent_ip : r->connection->client_ip, log_escape(msr->mp, r->uri), dcfg->is_enabled, r->hostname, unique_id, r);
 #endif
 
 #if AP_SERVER_MAJORVERSION_NUMBER > 1 && AP_SERVER_MINORVERSION_NUMBER > 2

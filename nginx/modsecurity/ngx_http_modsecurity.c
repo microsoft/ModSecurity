@@ -13,6 +13,7 @@
 */
 
 #include <ngx_http.h>
+#include <ngx_http_modsecurity_config_cache.h>
 #include <apr_bucket_nginx.h>
 
 #include <apr_base64.h>
@@ -23,7 +24,7 @@
 
 #include "api.h"
 #ifdef WAF_JSON_LOGGING_ENABLE
-#include <waf_log_util_external.h>
+#include <waf_log_util.h>
 #endif
 
 #define NOTE_NGINX_REQUEST_CTX "nginx-ctx"
@@ -376,6 +377,10 @@ ngx_http_modsecurity_load_headers_in(ngx_http_request_t *r)
     req->range = apr_table_get(req->headers_in, "Range");
     req->content_type = apr_table_get(req->headers_in, "Content-Type");
     req->content_encoding = apr_table_get(req->headers_in, "Content-Encoding");
+    req->hostname = apr_table_get(req->headers_in, "Host");
+    if (req->hostname == NULL) {
+        req->hostname = "<undefined>";
+    }
 
     lang = apr_table_get(ctx->req->headers_in, "Content-Languages");
     if(lang != NULL)
@@ -511,6 +516,7 @@ modsec_pcre_free(void *ptr)
 }
 
 static server_rec *modsec_server = NULL;
+static ngx_http_modsecurity_config_cache_t *config_cache = NULL;
 
 static ngx_int_t
 ngx_http_modsecurity_preconfiguration(ngx_conf_t *cf)
@@ -537,6 +543,12 @@ ngx_http_modsecurity_preconfiguration(ngx_conf_t *cf)
     modsec_server->server_hostname[ ngx_cycle->hostname.len] = '\0';
 
     modsecStartConfig();
+
+    config_cache = ngx_http_modsecurity_config_cache_init(cf);
+    if (config_cache == NULL) {
+        return NGX_ERROR;
+    }
+
     return NGX_OK;
 }
 
@@ -548,6 +560,9 @@ ngx_http_modsecurity_terminate(ngx_cycle_t *cycle)
         modsecTerminate();
         modsec_server = NULL;
     }
+
+    /* Configuration cache is allocated from a pool and does not need explicit freeing */
+    config_cache = NULL;
 }
 
 
@@ -583,7 +598,10 @@ ngx_http_modsecurity_init(ngx_conf_t *cf)
     pthread_mutex_init(&msc_pregcomp_ex_mtx, NULL);
 
 #ifdef WAF_JSON_LOGGING_ENABLE
-    init_appgw_rules_id_hash();
+    int result = init_appgw_rules_id_hash();
+    if (result) {
+        ngx_log_error(NGX_LOG_INFO, cf->log, 0, "ModSecurity: could not load application gateway rules IDs.");
+    }
 #endif    
 
     return NGX_OK;
@@ -1012,6 +1030,11 @@ ngx_http_modsecurity_config(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
 
+    mscf->config = ngx_http_modsecurity_config_cache_lookup(config_cache, &value[1]);
+    if (mscf->config != NULL) {
+        return NGX_CONF_OK;
+    }
+
     mscf->config = modsecGetDefaultConfig();
 
     if (mscf->config == NULL) {
@@ -1023,6 +1046,12 @@ ngx_http_modsecurity_config(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         ngx_log_error(NGX_LOG_EMERG, cf->log, 0, "ModSecurityConfig in %s:%ui: %s",
                 cf->conf_file->file.name.data, cf->conf_file->line, msg);
         return NGX_CONF_ERROR;
+    }
+
+    ngx_int_t result = ngx_http_modsecurity_config_cache_insert(config_cache, cf, &value[1], mscf->config);
+    if (result != NGX_OK) {
+        ngx_log_error(NGX_LOG_WARN, cf->log, 0, "Couldn't cache config in %s:%ui: %s",
+                cf->conf_file->file.name.data, cf->conf_file->line, msg);
     }
 
     return NGX_CONF_OK;
