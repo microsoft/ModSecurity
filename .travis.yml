@@ -10,7 +10,7 @@ services:
 # As such, it should not be built on Linux.
 branches:
   except:
-    - iis_maintenance
+    - waf_iis
 
 install: 
 # Setting up docker credentials.
