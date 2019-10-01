@@ -37,6 +37,7 @@ struct property
 
 struct waf_log
 {
+    jsoncons::string_view timeStamp;
     jsoncons::string_view resourceId;
     jsoncons::string_view operationName;
     jsoncons::string_view category;
@@ -47,7 +48,7 @@ struct waf_log
 
 JSONCONS_TYPE_TRAITS_DECL(waf_logging::detail, message, data, file, line);
 JSONCONS_TYPE_TRAITS_DECL(waf_logging::property, instanceId, clientIp, clientPort, requestUri, ruleSetType, ruleSetVersion, ruleId, message, action, site, details, hostname, transactionId);
-JSONCONS_TYPE_TRAITS_DECL(waf_logging::waf_log, resourceId, operationName, category, properties);
+JSONCONS_TYPE_TRAITS_DECL(waf_logging::waf_log, timeStamp, resourceId, operationName, category, properties);
 
 static std::string to_json_string(const waf_logging::waf_log& log) {
     jsoncons::json_options options;
@@ -121,7 +122,7 @@ static bool is_mandatory_rule(const rule_set_types type, const rule_set_versions
     return contains_current_id(current_rule_ids);
 }
 
-static std::string get_json_log_message(const char* resource_id, const char* operation_name, const char* category,
+static std::string get_json_log_message(const char* timestamp, const char* resource_id, const char* operation_name, const char* category,
         const char* instance_id, const char* client_ip, const char* client_port, const char* request_uri,
         const char* rule_set_type, const char* rule_set_version, const char* rule_id, const char* messages,
         const int action, const int site, const char* details_messages, const char* details_data,
@@ -177,26 +178,27 @@ static std::string get_json_log_message(const char* resource_id, const char* ope
     const str_view waf_unique_id_str = make_string_view_strip_quotes(waf_unique_id);
 
     return to_json_string({
-            resource_id,
-            operation_name,
-            category,
-            waf_logging::property {
-                instance_id,
-                client_ip,
-                client_port,
-                request_uri,
-                rule_set_type,
-                rule_set_version,
-                rule_id_str,
-                message_str,
-                action_str,
-                site_str,
-                waf_logging::detail {
-                    details_messages,
-                    details_data_str,
-                    details_file_str,
-                    details_line_str
-                },
+        timestamp,
+        resource_id,
+        operation_name,
+        category,
+        waf_logging::property {
+            instance_id,
+            client_ip,
+            client_port,
+            request_uri,
+            rule_set_type,
+            rule_set_version,
+            rule_id_str,
+            message_str,
+            action_str,
+            site_str,
+            waf_logging::detail {
+                details_messages,
+                details_data_str,
+                details_file_str,
+                details_line_str
+            },
             hostname,
             waf_unique_id_str
         }
@@ -204,14 +206,14 @@ static std::string get_json_log_message(const char* resource_id, const char* ope
 }
 
 // Get fields from ModSec and format them to JSON.
-char* generate_json(const char* resource_id, const char* operation_name, const char* category,
+char* generate_json(const char* timestamp, const char* resource_id, const char* operation_name, const char* category,
         const char* instance_id, const char* client_ip, const char* client_port, const char* request_uri,
         const char* rule_set_type, const char* rule_set_version, const char* rule_id, const char* messages,
         const int action, const int site, const char* details_messages, const char* details_data,
         const char* details_file, const char* details_line, const char* hostname, const char* waf_unique_id) {
     
     try {
-        const std::string json_string = get_json_log_message(resource_id, operation_name, category,
+        const std::string json_string = get_json_log_message(timestamp, resource_id, operation_name, category,
                 instance_id, client_ip, client_port, request_uri, rule_set_type, rule_set_version,
                 rule_id, messages, action, site, details_messages, details_data, details_file,
                 details_line, hostname, waf_unique_id);
