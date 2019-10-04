@@ -25,6 +25,13 @@ nmake -f Makefile.win clean
 nmake -f Makefile.win APACHE=..\iis\%DEPENDENCIES_DIR%\Apache24 PCRE=..\iis\%DEPENDENCIES_DIR%\pcre\build CURL=..\iis\%DEPENDENCIES_DIR%\curl YAJL=..\iis\%DEPENDENCIES_DIR%\yajl\build\yajl-2.1.0 SSDEEP=..\iis\%DEPENDENCIES_DIR%\ssdeep VERSION=VERSION_IIS
 @if NOT (%ERRORLEVEL%) == (0) goto build_failed
 
+@echo validator...
+cd ..\validator
+del *.obj *.dll *.lib
+nmake -f Makefile.win clean
+NMAKE -f Makefile.win APACHE=..\iis\%DEPENDENCIES_DIR%\Apache24 PCRE=..\iis\%DEPENDENCIES_DIR%\pcre\build LIBXML2=..\iis\%DEPENDENCIES_DIR%\libxml2 LUA=..\iis\%DEPENDENCIES_DIR%\lua\src VERSION=VERSION_IIS YAJL=..\iis\%DEPENDENCIES_DIR%\yajl\build\yajl-2.1.0 CURL=..\iis\%DEPENDENCIES_DIR%\curl
+@if NOT (%ERRORLEVEL%) == (0) goto build_failed
+
 @echo iis...
 cd ..\iis
 del *.obj *.dll *.lib
@@ -36,6 +43,7 @@ cd %CURRENT_DIR%
 
 @echo Copy...
 copy /y ..\mlogc\mlogc.exe %OUTPUT_DIR%
+copy /y ..\validator\modsec-validator.exe %OUTPUT_DIR%
 copy /y ..\iis\modsecurityiis.dll %OUTPUT_DIR%
 copy /y ..\iis\modsecurityiis.pdb %OUTPUT_DIR%
 
