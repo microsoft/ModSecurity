@@ -13,7 +13,7 @@ static void print_log(void* obj, int level, char* str)
 
 static int exit_with_error(const char* msg)
 {
-    puts(msg);
+    fputs(msg, stderr);
     return EXIT_FAILURE;
 }
 
