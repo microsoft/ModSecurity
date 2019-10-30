@@ -344,13 +344,13 @@ static void send_waf_log(struct waf_lock* lock, apr_file_t* fd, const char* str1
     get_short_filename(waf_filename);
     get_ruleset_type_version(waf_ruleset_info, waf_ruleset_type, waf_ruleset_version); 
 
-    // Format UTC time
+    // Format UTC timestamp
     time_t rawtime;
-    struct tm * timeinfo;
-    char timestamp[30];
     time(&rawtime);
-    timeinfo = gmtime(&rawtime);
-    strftime(timestamp, 30, "%Y-%m-%dT%H:%M:%S+00:00", timeinfo);
+    struct tm timeinfo;
+    gmtime_r(&rawtime, &timeinfo);
+    char timestamp[30];
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M:%S+00:00", &timeinfo);
 
     char* json_str = generate_json(timestamp, msc_waf_resourceId, WAF_LOG_UTIL_OPERATION_NAME, WAF_LOG_UTIL_CATEGORY, msc_waf_instanceId, waf_ip, waf_port, uri, waf_ruleset_type, waf_ruleset_version, waf_id, waf_message, mode, 0, waf_detail_message, waf_data, waf_filename, waf_line, hostname, waf_unique_id, waf_policy_id, waf_policy_scope, waf_policy_scope_name);
     if (!json_str) {
