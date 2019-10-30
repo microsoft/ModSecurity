@@ -345,8 +345,7 @@ static void send_waf_log(struct waf_lock* lock, apr_file_t* fd, const char* str1
     get_ruleset_type_version(waf_ruleset_info, waf_ruleset_type, waf_ruleset_version); 
 
     // Format UTC timestamp
-    time_t rawtime;
-    time(&rawtime);
+    time_t rawtime = time(NULL);
     struct tm timeinfo;
     gmtime_r(&rawtime, &timeinfo);
     char timestamp[30];
