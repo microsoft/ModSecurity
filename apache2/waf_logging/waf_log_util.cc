@@ -185,7 +185,6 @@ static std::string get_json_log_message(const char* timestamp, const char* resou
     const str_view details_file_str = details_file ? str_view {details_file, strlen(details_file) - 1} : str_view{};
     const str_view details_data_str = make_string_view_strip_quotes(details_data);
     const str_view details_line_str = make_string_view_strip_quotes(details_line);
-    const str_view waf_unique_id_str = make_string_view_strip_quotes(waf_unique_id);
 
     return to_json_string({
         timestamp,
@@ -210,7 +209,7 @@ static std::string get_json_log_message(const char* timestamp, const char* resou
                 details_line_str
             },
             hostname,
-            waf_unique_id_str,
+            waf_unique_id,
             waf_policy_id,
             waf_policy_scope,
             waf_policy_scope_name
