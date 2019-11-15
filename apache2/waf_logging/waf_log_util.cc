@@ -130,7 +130,7 @@ static std::string get_json_log_message(const char* timestamp, const char* resou
         const char* category, const char* instance_id, const char* client_ip, const char* client_port, 
         const char* request_uri, const char* rule_set_type, const char* rule_set_version, const char* rule_id, 
         const char* messages, const int action, const int site, const char* details_messages, const char* details_data,
-        const char* details_file, const char* details_line, const char* hostname, const char* waf_unique_id,
+        const char* details_file, const char* details_line, const char* hostname, const char* request_id,
         const char* waf_policy_id, const char* waf_policy_scope, const char* waf_policy_scope_name) {
 
     using str_view = jsoncons::string_view;
@@ -209,7 +209,7 @@ static std::string get_json_log_message(const char* timestamp, const char* resou
                 details_line_str
             },
             hostname,
-            waf_unique_id,
+            request_id,
             waf_policy_id,
             waf_policy_scope,
             waf_policy_scope_name
@@ -222,14 +222,14 @@ char* generate_json(const char* timestamp, const char* resource_id, const char* 
         const char* instance_id, const char* client_ip, const char* client_port, const char* request_uri,
         const char* rule_set_type, const char* rule_set_version, const char* rule_id, const char* messages,
         const int action, const int site, const char* details_messages, const char* details_data,
-        const char* details_file, const char* details_line, const char* hostname, const char* waf_unique_id,
+        const char* details_file, const char* details_line, const char* hostname, const char* request_id,
         const char* waf_policy_id, const char* waf_policy_scope, const char* waf_policy_scope_name) {
     
     try {
         const std::string json_string = get_json_log_message(timestamp, resource_id, operation_name, category,
                 instance_id, client_ip, client_port, request_uri, rule_set_type, rule_set_version,
                 rule_id, messages, action, site, details_messages, details_data, details_file,
-                details_line, hostname, waf_unique_id, waf_policy_id, waf_policy_scope, waf_policy_scope_name);
+                details_line, hostname, request_id, waf_policy_id, waf_policy_scope, waf_policy_scope_name);
         char* result = static_cast<char*>(std::malloc(json_string.length() + 2)); // Two extra bytes for \n and \0
         std::copy(json_string.begin(), json_string.end(), result);
         result[json_string.length()] = '\n';

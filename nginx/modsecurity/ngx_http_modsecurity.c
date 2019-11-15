@@ -371,8 +371,7 @@ ngx_http_modsecurity_load_request(ngx_http_request_t *r)
     req->header_only = r->header_only ? r->header_only : (r->method == NGX_HTTP_HEAD);
 
 #ifdef WAF_JSON_LOGGING_ENABLE
-    ngx_str_t  request_id;
-    request_id = get_request_id(r);
+    ngx_str_t request_id = get_request_id(r);
     req->log_id = dup_ngx_str_to_apr(req->pool, &request_id);
 #endif
 

@@ -318,7 +318,7 @@ static int write_file_with_lock(struct waf_lock* lock, apr_file_t* fd, char* str
 /**
  * send all waf fields in json format to a file.
  */
-static void send_waf_log(struct waf_lock* lock, apr_file_t* fd, const char* str1, const char* ip_port, const char* uri, int mode, const char* hostname, char* unique_id, request_rec *r, const char* waf_policy_id, const char* waf_policy_scope, const char* waf_policy_scope_name) {
+static void send_waf_log(struct waf_lock* lock, apr_file_t* fd, const char* str1, const char* ip_port, const char* uri, int mode, const char* hostname, char* request_id, request_rec *r, const char* waf_policy_id, const char* waf_policy_scope, const char* waf_policy_scope_name) {
     char waf_filename[1024] = "";
     char waf_line[1024] = "";
     char waf_id[1024] = "";
@@ -330,7 +330,6 @@ static void send_waf_log(struct waf_lock* lock, apr_file_t* fd, const char* str1
     char waf_ruleset_type[50] = "";
     char waf_ruleset_version[50] = "";
     char waf_detail_message[1024] = "";
-	char waf_unique_id[100] = "";
 
     get_field_value("[file ", "]", str1, waf_filename);
     get_field_value("[id ", "]", str1, waf_id);
@@ -350,7 +349,7 @@ static void send_waf_log(struct waf_lock* lock, apr_file_t* fd, const char* str1
     char timestamp[30];
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M:%S+00:00", &timeinfo);
 
-    char* json_str = generate_json(timestamp, msc_waf_resourceId, WAF_LOG_UTIL_OPERATION_NAME, WAF_LOG_UTIL_CATEGORY, msc_waf_instanceId, waf_ip, waf_port, uri, waf_ruleset_type, waf_ruleset_version, waf_id, waf_message, mode, 0, waf_detail_message, waf_data, waf_filename, waf_line, hostname, unique_id, waf_policy_id, waf_policy_scope, waf_policy_scope_name);
+    char* json_str = generate_json(timestamp, msc_waf_resourceId, WAF_LOG_UTIL_OPERATION_NAME, WAF_LOG_UTIL_CATEGORY, msc_waf_instanceId, waf_ip, waf_port, uri, waf_ruleset_type, waf_ruleset_version, waf_id, waf_message, mode, 0, waf_detail_message, waf_data, waf_filename, waf_line, hostname, request_id, waf_policy_id, waf_policy_scope, waf_policy_scope_name);
     if (!json_str) {
 #if AP_SERVER_MAJORVERSION_NUMBER > 1 && AP_SERVER_MINORVERSION_NUMBER > 2
        ap_log_rerror(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, r,
