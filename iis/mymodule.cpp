@@ -760,20 +760,19 @@ CMyHttpModule::OnBeginRequest(
         pConfig->configLoadingFailed = true;
         pHttpContext->GetResponse()->SetStatus(500, "WAF internal error. Invalid configuration.");
         pHttpContext->SetRequestHandled();
-		LeaveCriticalSection(&m_csLock);
+        LeaveCriticalSection(&m_csLock);
         return RQ_NOTIFICATION_FINISH_REQUEST;
     };
 
     // If we previously failed to load the config, try again if 10sec passed
     if (pConfig->configLoadingFailed)
     {
-		if (difftime(curr_time, pConfig->configFailTime) < 10)
+		if (difftime(curr_time, pConfig->configFailTime) < 10) {
 			return reportConfigurationError();
+		}			
 		else {
-			char* msg = "Recycling w3wp worker due to problems with loading modsec config";
-			WriteEventViewerLog(msg, EVENTLOG_ERROR_TYPE);
-			PCWSTR recycle_msg = L"ModSecurity config load failed";
-			g_pHttpServer->RecycleProcess(recycle_msg);
+			WriteEventViewerLog("Recycling w3wp worker due to config load fail", EVENTLOG_ERROR_TYPE);
+			g_pHttpServer->RecycleProcess(L"ModSecurity config load failed");
 		}
     }
 

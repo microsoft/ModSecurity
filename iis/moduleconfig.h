@@ -69,7 +69,7 @@ class MODSECURITY_STORED_CONTEXT : public IHttpStoredContext
 
 	void*			  m_Config;
 
-	time_t configFailTime;
+	time_t configFailTime = 0;
 	bool configLoadingFailed = false;
 
 private:
