@@ -723,6 +723,7 @@ CMyHttpModule::OnBeginRequest(
     
     UNREFERENCED_PARAMETER ( pProvider );
 
+	time_t curr_time = time(NULL);
 	EnterCriticalSection(&m_csLock);
 
     if ( pHttpContext == NULL ) 
@@ -755,17 +756,24 @@ CMyHttpModule::OnBeginRequest(
         goto Finished;
 	}
 
-    auto reportConfigurationError = [pConfig, pHttpContext] {
+    auto reportConfigurationError = [pConfig, pHttpContext, this] {
         pConfig->configLoadingFailed = true;
         pHttpContext->GetResponse()->SetStatus(500, "WAF internal error. Invalid configuration.");
         pHttpContext->SetRequestHandled();
+        LeaveCriticalSection(&m_csLock);
         return RQ_NOTIFICATION_FINISH_REQUEST;
     };
 
-    // If we previously failed to load the config, don't spam the event log by trying and failing again
+    // If we previously failed to load the config, try again if 10sec passed
     if (pConfig->configLoadingFailed)
     {
-        return reportConfigurationError();
+		if (difftime(curr_time, pConfig->configFailTime) < 10) {
+			return reportConfigurationError();
+		}			
+		else {
+			WriteEventViewerLog("Recycling w3wp worker due to config load fail", EVENTLOG_ERROR_TYPE);
+			g_pHttpServer->RecycleProcess(L"ModSecurity config load failed");
+		}
     }
 
 	if(pConfig->m_Config == NULL)
@@ -777,6 +785,7 @@ CMyHttpModule::OnBeginRequest(
 
 		if ( FAILED( hr ) )
 		{
+			pConfig->configFailTime = curr_time;
             return reportConfigurationError();
 		}
 
@@ -790,6 +799,7 @@ CMyHttpModule::OnBeginRequest(
 
 		if ( FAILED( hr ) )
 		{
+			pConfig->configFailTime = curr_time;
 			delete path;
             return reportConfigurationError();
 		}
@@ -801,6 +811,7 @@ CMyHttpModule::OnBeginRequest(
 			if(err != NULL)
 			{
 				WriteEventViewerLog(err, EVENTLOG_ERROR_TYPE);
+				pConfig->configFailTime = curr_time;
 				delete apppath;
 				delete path;
                 return reportConfigurationError();
