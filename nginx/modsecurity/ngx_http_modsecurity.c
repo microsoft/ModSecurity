@@ -468,7 +468,7 @@ ngx_http_modsecurity_load_headers_in(ngx_http_request_t *r)
 }
 
 static ngx_inline ngx_int_t
-ngx_http_modsecurity_load_request_body(ngx_http_request_t *r)
+ngx_http_modsecurity_load_request_body_prevention_mode(ngx_http_request_t *r)
 {
     ngx_http_modsecurity_ctx_t    *ctx;
 
@@ -485,6 +485,60 @@ ngx_http_modsecurity_load_request_body(ngx_http_request_t *r)
         return NGX_ERROR;
     }
 
+    return NGX_OK;
+}
+
+static ngx_inline apr_bucket *
+copy_ngx_buf_to_apr_bucket(ngx_buf_t *buf, apr_bucket_alloc_t* alloc)
+{
+    const ssize_t buf_size = ngx_buf_size(buf);
+    u_char *data = apr_bucket_alloc(buf_size, alloc);
+    if (data == NULL) {
+        return NULL;
+    }
+
+    if (buf->pos == NULL && ngx_buf_size(buf) != 0) {
+        const ssize_t read_size = ngx_read_file(buf->file, data, buf_size, buf->file_pos);
+        if (read_size != buf_size) {
+            apr_bucket_free(data);
+            return NULL;
+        }
+    } else {
+        ngx_memcpy(data, buf->pos, buf_size);
+    }
+
+    return apr_bucket_heap_create((char *)data, buf_size, apr_bucket_free, alloc);
+}
+
+static ngx_inline ngx_int_t
+ngx_http_modsecurity_load_request_body_detection_mode(ngx_http_request_t *r)
+{
+    ngx_http_modsecurity_ctx_t *ctx = ngx_http_get_module_ctx(r, ngx_http_modsecurity);
+    apr_bucket_brigade *brigade = ctx->brigade;
+    modsecSetBodyBrigade(ctx->req, brigade);
+
+    if (r->request_body != NULL) {
+        ngx_chain_t *chain = r->request_body->bufs;
+        while (chain) {
+            apr_bucket *bucket = copy_ngx_buf_to_apr_bucket(chain->buf, brigade->bucket_alloc);
+            if (bucket == NULL) {
+                return NGX_ERROR;
+            }
+
+            APR_BRIGADE_INSERT_TAIL(brigade, bucket);
+            if (chain->buf->last_buf) {
+                bucket = apr_bucket_eos_create(brigade->bucket_alloc);
+                APR_BRIGADE_INSERT_TAIL(brigade, bucket);
+                return NGX_OK;
+            }
+
+            chain = chain->next;
+        }
+    }
+
+    /* Make sure we always have a EOS bucket */
+    apr_bucket *bucket = apr_bucket_eos_create(brigade->bucket_alloc);
+    APR_BRIGADE_INSERT_TAIL(brigade, bucket);
     return NGX_OK;
 }
 
@@ -726,7 +780,7 @@ ngx_http_modsecurity_prevention_thread_func(void *data, ngx_log_t *log)
     }
 
     if (modsecIsRequestBodyAccessEnabled(mod_ctx->req) && (r->headers_in.content_length || r->headers_in.chunked)) {
-        if (ngx_http_modsecurity_load_request_body(r) != NGX_OK) {
+        if (ngx_http_modsecurity_load_request_body_prevention_mode(r) != NGX_OK) {
             mod_ctx->status_code = NGX_HTTP_INTERNAL_SERVER_ERROR;
             return;
         }
@@ -849,7 +903,7 @@ ngx_http_modsecurity_detection_task_offload(ngx_http_request_t *r)
     }
 
     if (modsecIsRequestBodyAccessEnabled(req) && (r->headers_in.content_length || r->headers_in.chunked)) {
-        if (ngx_http_modsecurity_load_request_body(r) != NGX_OK) {
+        if (ngx_http_modsecurity_load_request_body_detection_mode(r) != NGX_OK) {
             return NGX_ERROR;
         }
     }
