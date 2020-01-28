@@ -788,7 +788,7 @@ void modsecReportRemoteLoadedRules()
 #endif
 
 #ifdef WAF_JSON_LOGGING_ENABLE
-void modsecReopenFileIfNeeded(request_rec *r)
+void modsecReopenLogfileIfNeeded(request_rec *r)
 {
     modsec_rec *msr = NULL;
     int rc = 0;
@@ -824,8 +824,8 @@ void modsecReopenFileIfNeeded(request_rec *r)
             if (msc_waf_log_fd != NULL){
                 rc = apr_file_close(msc_waf_log_fd);
                 if (rc != APR_SUCCESS) {
-                    ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "ModSecurity: " \
-                        "not able to get lock for file: %s",
+                    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, NULL, "ModSecurity: " \
+                        "cannot close file: %s",
                         msc_waf_log_path);
                 }
             }
@@ -835,7 +835,7 @@ void modsecReopenFileIfNeeded(request_rec *r)
             rc = waf_free_exclusive_lock(msr->modsecurity->wafjsonlog_lock);
             if (waf_lock_is_error(rc)) {
                 ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "ModSecurity: " \
-                    "not able to get lock for file: %s",
+                    "cannot release lock for file: %s",
                     msc_waf_log_path);
             }
         }

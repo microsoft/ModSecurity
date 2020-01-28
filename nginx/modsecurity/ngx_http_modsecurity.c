@@ -946,7 +946,7 @@ ngx_http_modsecurity_handler(ngx_http_request_t *r)
         ngx_http_set_ctx(r, ctx, ngx_http_modsecurity);
     }
 
-    modsecReopenFileIfNeeded(ctx->req);
+    modsecReopenLogfileIfNeeded(ctx->req);
 
     // Sometimes Nginx calls ngx_http_modsecurity_handler multiple times for the same request, after a worker thread has already been started. This is to guard against it.
     if (ctx->thread_running) {
