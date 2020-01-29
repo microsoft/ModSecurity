@@ -799,7 +799,7 @@ void modsecReopenLogfileIfNeeded(request_rec *r)
     if (msr == NULL)
         return;
 
-    if (msc_waf_log_reopened){
+    if (msc_waf_log_reopen_requested){
         if (msr->modsecurity != NULL && msr->modsecurity->wafjsonlog_lock != NULL){
             rc = waf_get_exclusive_lock(msr->modsecurity->wafjsonlog_lock);
             if (waf_lock_is_error(rc)) {
@@ -817,7 +817,14 @@ void modsecReopenLogfileIfNeeded(request_rec *r)
                     "not able to reopen file: %s",
                     msc_waf_log_path);
 
-                waf_free_exclusive_lock(msr->modsecurity->wafjsonlog_lock);
+                rc = waf_free_exclusive_lock(msr->modsecurity->wafjsonlog_lock);
+
+                if (waf_lock_is_error(rc)) {
+                    ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "ModSecurity: " \
+                        "cannot release lock for file: %s",
+                        msc_waf_log_path);
+                }
+                
                 return;
             }
 
@@ -840,7 +847,7 @@ void modsecReopenLogfileIfNeeded(request_rec *r)
             }
         }
 
-        msc_waf_log_reopened = 0;
+        msc_waf_log_reopen_requested = 0;
     }
 }
 #endif
