@@ -790,18 +790,16 @@ void modsecReportRemoteLoadedRules()
 #ifdef WAF_JSON_LOGGING_ENABLE
 void modsecReopenLogfileIfNeeded(request_rec *r)
 {
-    modsec_rec *msr = NULL;
     int rc = 0;
     apr_file_t * fd = NULL;
     /* Find the transaction context first. */
-    msr = retrieve_msr(r);
 
-    if (msr == NULL)
+    if (modsecurity == NULL)
         return;
 
     if (msc_waf_log_reopen_requested){
-        if (msr->modsecurity != NULL && msr->modsecurity->wafjsonlog_lock != NULL){
-            rc = waf_get_exclusive_lock(msr->modsecurity->wafjsonlog_lock);
+        if (modsecurity != NULL && modsecurity->wafjsonlog_lock != NULL){
+            rc = waf_get_exclusive_lock(modsecurity->wafjsonlog_lock);
             if (waf_lock_is_error(rc)) {
                 ap_log_rerror(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, r,
                         "ModSecurity not able to get lock for %s file", msc_waf_log_path);
@@ -817,14 +815,14 @@ void modsecReopenLogfileIfNeeded(request_rec *r)
                     "not able to reopen file: %s",
                     msc_waf_log_path);
 
-                rc = waf_free_exclusive_lock(msr->modsecurity->wafjsonlog_lock);
+                rc = waf_free_exclusive_lock(modsecurity->wafjsonlog_lock);
 
                 if (waf_lock_is_error(rc)) {
                     ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "ModSecurity: " \
                         "cannot release lock for file: %s",
                         msc_waf_log_path);
                 }
-                
+
                 return;
             }
 
@@ -839,7 +837,7 @@ void modsecReopenLogfileIfNeeded(request_rec *r)
 
             msc_waf_log_fd = fd;
 
-            rc = waf_free_exclusive_lock(msr->modsecurity->wafjsonlog_lock);
+            rc = waf_free_exclusive_lock(modsecurity->wafjsonlog_lock);
             if (waf_lock_is_error(rc)) {
                 ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "ModSecurity: " \
                     "cannot release lock for file: %s",
