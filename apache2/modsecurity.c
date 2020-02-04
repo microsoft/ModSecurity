@@ -213,6 +213,8 @@ int modsecurity_init(msc_engine *msce, apr_pool_t *mp) {
         //return HTTP_INTERNAL_SERVER_ERROR;
         return -1;
     }
+
+    filelog_lock = msce->wafjsonlog_lock;
 #endif
 
 // Have removed all the lock permission related code since we implment in different way now

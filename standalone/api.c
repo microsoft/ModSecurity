@@ -793,55 +793,53 @@ void modsecReopenLogfileIfNeeded(request_rec *r)
     int rc = 0;
     apr_file_t * fd = NULL;
 
-    if (modsecurity == NULL)
+    if (filelog_lock == NULL)
         return;
 
     if (msc_waf_log_reopen_requested){
-        if (modsecurity != NULL && modsecurity->wafjsonlog_lock != NULL){
-            rc = waf_get_exclusive_lock(modsecurity->wafjsonlog_lock);
-            if (waf_lock_is_error(rc)) {
-                ap_log_rerror(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, r,
-                        "ModSecurity not able to get lock for %s file", msc_waf_log_path);
-                return;
-            }
+        rc = waf_get_exclusive_lock(filelog_lock);
+        if (waf_lock_is_error(rc)) {
+            ap_log_rerror(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, r,
+                    "ModSecurity not able to get lock for %s file", msc_waf_log_path);
+            return;
+        }
 
-            rc = apr_file_open(&fd, msc_waf_log_path,
-                   APR_WRITE | APR_APPEND | APR_CREATE | APR_BINARY,
-                   CREATEMODE | APR_WREAD, msc_waf_log_cmd->pool);
+        rc = apr_file_open(&fd, msc_waf_log_path,
+               APR_WRITE | APR_APPEND | APR_CREATE | APR_BINARY,
+               CREATEMODE | APR_WREAD, msc_waf_log_cmd->pool);
 
-            if (rc != APR_SUCCESS) {
-                ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "ModSecurity: " \
-                    "not able to reopen file: %s",
-                    msc_waf_log_path);
+        if (rc != APR_SUCCESS) {
+            ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "ModSecurity: " \
+                "not able to reopen file: %s",
+                msc_waf_log_path);
 
-                rc = waf_free_exclusive_lock(modsecurity->wafjsonlog_lock);
+            rc = waf_free_exclusive_lock(filelog_lock);
 
-                if (waf_lock_is_error(rc)) {
-                    ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "ModSecurity: " \
-                        "cannot release lock for file: %s",
-                        msc_waf_log_path);
-                }
-
-                return;
-            }
-
-            if (msc_waf_log_fd != NULL){
-                rc = apr_file_close(msc_waf_log_fd);
-                if (rc != APR_SUCCESS) {
-                    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, NULL, "ModSecurity: " \
-                        "cannot close file: %s",
-                        msc_waf_log_path);
-                }
-            }
-
-            msc_waf_log_fd = fd;
-
-            rc = waf_free_exclusive_lock(modsecurity->wafjsonlog_lock);
             if (waf_lock_is_error(rc)) {
                 ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "ModSecurity: " \
                     "cannot release lock for file: %s",
                     msc_waf_log_path);
             }
+
+            return;
+        }
+
+        if (msc_waf_log_fd != NULL){
+            rc = apr_file_close(msc_waf_log_fd);
+            if (rc != APR_SUCCESS) {
+                ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, NULL, "ModSecurity: " \
+                    "cannot close file: %s",
+                    msc_waf_log_path);
+            }
+        }
+
+        msc_waf_log_fd = fd;
+
+        rc = waf_free_exclusive_lock(filelog_lock);
+        if (waf_lock_is_error(rc)) {
+            ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "ModSecurity: " \
+                "cannot release lock for file: %s",
+                msc_waf_log_path);
         }
 
         msc_waf_log_reopen_requested = 0;

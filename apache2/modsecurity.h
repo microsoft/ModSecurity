@@ -176,7 +176,7 @@ extern DSOLOCAL int *unicode_map_table;
 extern DSOLOCAL char *msc_waf_resourceId;
 extern DSOLOCAL char *msc_waf_instanceId;
 extern DSOLOCAL sig_atomic_t msc_waf_log_reopen_requested;
-extern DSOLOCAL msc_engine DSOLOCAL *modsecurity;
+extern DSOLOCAL struct waf_lock *filelog_lock;;
 extern DSOLOCAL apr_file_t *msc_waf_log_fd;
 extern DSOLOCAL char msc_waf_log_path[WAF_LOG_PATH_LENGTH];
 extern DSOLOCAL cmd_parms *msc_waf_log_cmd;
