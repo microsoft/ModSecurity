@@ -792,7 +792,6 @@ void modsecReopenLogfileIfNeeded(request_rec *r)
 {
     int rc = 0;
     apr_file_t * fd = NULL;
-    /* Find the transaction context first. */
 
     if (modsecurity == NULL)
         return;
