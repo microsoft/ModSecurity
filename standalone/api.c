@@ -793,11 +793,11 @@ void modsecReopenLogfileIfNeeded(request_rec *r)
     int rc = 0;
     apr_file_t * fd = NULL;
 
-    if (filelog_lock == NULL)
+    if (wafjsonlog_lock == NULL)
         return;
 
     if (msc_waf_log_reopen_requested){
-        rc = waf_get_exclusive_lock(filelog_lock);
+        rc = waf_get_exclusive_lock(wafjsonlog_lock);
         if (waf_lock_is_error(rc)) {
             ap_log_rerror(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, r,
                     "ModSecurity not able to get lock for %s file", msc_waf_log_path);
@@ -813,7 +813,7 @@ void modsecReopenLogfileIfNeeded(request_rec *r)
                 "not able to reopen file: %s",
                 msc_waf_log_path);
 
-            rc = waf_free_exclusive_lock(filelog_lock);
+            rc = waf_free_exclusive_lock(wafjsonlog_lock);
 
             if (waf_lock_is_error(rc)) {
                 ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "ModSecurity: " \
@@ -835,7 +835,7 @@ void modsecReopenLogfileIfNeeded(request_rec *r)
 
         msc_waf_log_fd = fd;
 
-        rc = waf_free_exclusive_lock(filelog_lock);
+        rc = waf_free_exclusive_lock(wafjsonlog_lock);
         if (waf_lock_is_error(rc)) {
             ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, NULL, "ModSecurity: " \
                 "cannot release lock for file: %s",
