@@ -316,6 +316,25 @@ static int write_file_with_lock(struct waf_lock* lock, apr_file_t** fd, char* st
 }
 
 /**
+ * get pcre specific error message.
+ */
+static void get_pcre_error_message(const char* orig_string, char* message) {
+    const char* pcre_error_message = " Execution error - PCRE limits exceeded ";
+
+    if (strlen(message) != 0) {
+        return;
+    }
+
+    if (orig_string && (strstr(orig_string, pcre_error_message) != NULL)) {
+        // since message is preallocated as 1024, so don't need to check boundary here.
+        strcpy(message, pcre_error_message);
+    }
+
+    return;
+}
+
+
+/**
  * send all waf fields in json format to a file.
  */
 static void send_waf_log(struct waf_lock* lock, apr_file_t** fd, const char* str1, const char* ip_port, const char* uri, int mode, const char* hostname, char* request_id, request_rec *r, const char* waf_policy_id, const char* waf_policy_scope, const char* waf_policy_scope_name) {
@@ -335,6 +354,7 @@ static void send_waf_log(struct waf_lock* lock, apr_file_t** fd, const char* str
     get_field_value("[id ", "]", str1, waf_id);
     get_field_value("[line ", "]", str1, waf_line);
     get_field_value("[msg ", "]", str1, waf_message);
+    get_pcre_error_message(str1, waf_message);
     get_field_value("[data ", "]", str1, waf_data);
 	get_field_value("[ver ", "]", str1, waf_ruleset_info);
 	get_ip_port(ip_port, waf_ip, waf_port);
