@@ -1529,6 +1529,10 @@ static const char *cmd_component_signature(cmd_parms *cmd, void *_dcfg,
     /* ENH Enforce "Name/VersionX.Y.Z (comment)" format. */
     *(char **)apr_array_push(dcfg->component_signatures) = (char *)p1;
 
+#ifdef WAF_JSON_LOGGING_ENABLE
+    msc_waf_signature = (char *)p1;
+#endif
+
     return NULL;
 }
 

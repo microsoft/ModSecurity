@@ -274,20 +274,19 @@ static void get_short_filename(char* waf_filename) {
  * get crs type and version.
  */
 static void get_ruleset_type_version(char* waf_ruleset_info, char* waf_ruleset_type, char* waf_ruleset_version) {
-    char ruleset_info_no_quote[200] = "";
     char *type_start = NULL;
     char *type_end = NULL;
 
-    get_field_value("\"", "\"", waf_ruleset_info, ruleset_info_no_quote);
-    type_start = ruleset_info_no_quote;
+    type_start = waf_ruleset_info;
+
+    if (type_start == NULL){
+        return;
+    }
 
     type_end = strstr(type_start, "/");
     if (type_end != NULL) {
         strncpy(waf_ruleset_type, type_start, type_end - type_start);
         strcpy(waf_ruleset_version, type_end + 1);
-    }
-    else {
-        strcpy(waf_ruleset_type, type_start + 1);
     }
 }
 
@@ -345,7 +344,6 @@ static void send_waf_log(struct waf_lock* lock, apr_file_t** fd, const char* str
     char waf_data[1024] = "";
     char waf_ip[50] = "";
     char waf_port[50] = "";
-    char waf_ruleset_info[200] = "";
     char waf_ruleset_type[50] = "";
     char waf_ruleset_version[50] = "";
     char waf_detail_message[1024] = "";
@@ -356,11 +354,10 @@ static void send_waf_log(struct waf_lock* lock, apr_file_t** fd, const char* str
     get_field_value("[msg ", "]", str1, waf_message);
     get_pcre_error_message(str1, waf_message);
     get_field_value("[data ", "]", str1, waf_data);
-	get_field_value("[ver ", "]", str1, waf_ruleset_info);
 	get_ip_port(ip_port, waf_ip, waf_port);
     get_detail_message(str1, waf_detail_message); 
     get_short_filename(waf_filename);
-    get_ruleset_type_version(waf_ruleset_info, waf_ruleset_type, waf_ruleset_version); 
+    get_ruleset_type_version(msc_waf_signature, waf_ruleset_type, waf_ruleset_version); 
 
     // Format UTC timestamp
     time_t rawtime = time(NULL);
