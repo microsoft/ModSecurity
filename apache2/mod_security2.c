@@ -100,7 +100,6 @@ struct waf_lock DSOLOCAL *wafjsonlog_lock = NULL;
 apr_file_t DSOLOCAL *msc_waf_log_fd = NULL;
 char DSOLOCAL msc_waf_log_path[WAF_LOG_PATH_LENGTH] = ""; 
 cmd_parms DSOLOCAL *msc_waf_log_cmd = NULL;
-char DSOLOCAL *msc_waf_signature = NULL;
 #endif
 
 #ifndef _WIN32

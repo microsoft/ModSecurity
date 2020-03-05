@@ -180,7 +180,6 @@ extern DSOLOCAL struct waf_lock *wafjsonlog_lock;;
 extern DSOLOCAL apr_file_t *msc_waf_log_fd;
 extern DSOLOCAL char msc_waf_log_path[WAF_LOG_PATH_LENGTH];
 extern DSOLOCAL cmd_parms *msc_waf_log_cmd;
-extern DSOLOCAL char *msc_waf_signature;
 #endif
 
 #ifndef _WIN32
@@ -619,6 +618,11 @@ struct directory_config {
 
     /* WAF policy identification information */
     const char          *waf_policy_id;
+
+#ifdef WAF_JSON_LOGGING_ENABLE
+    /* WAF rule set type/version information */
+    const char          *waf_signature;
+#endif
 
     /* Geo Lookup */
     geo_db              *geo;

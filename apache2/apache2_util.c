@@ -271,9 +271,9 @@ static void get_short_filename(char* waf_filename) {
 }
 
 /**
- * get crs type and version.
+ * get crs type and version, format will be changed in waf_log_util.cc parse_rule_set_type/parse_rule_set_version
  */
-static void get_ruleset_type_version(char* waf_ruleset_info, char* waf_ruleset_type, char* waf_ruleset_version) {
+static void get_ruleset_type_version(const char* waf_ruleset_info, char* waf_ruleset_type, char* waf_ruleset_version) {
     char *type_start = NULL;
     char *type_end = NULL;
 
@@ -315,28 +315,9 @@ static int write_file_with_lock(struct waf_lock* lock, apr_file_t** fd, char* st
 }
 
 /**
- * get pcre specific error message.
- */
-static void get_pcre_error_message(const char* orig_string, char* message) {
-    const char* pcre_error_message = " Execution error - PCRE limits exceeded ";
-
-    if (strlen(message) != 0) {
-        return;
-    }
-
-    if (orig_string && (strstr(orig_string, pcre_error_message) != NULL)) {
-        // since message is preallocated as 1024, so don't need to check boundary here.
-        strcpy(message, pcre_error_message);
-    }
-
-    return;
-}
-
-
-/**
  * send all waf fields in json format to a file.
  */
-static void send_waf_log(struct waf_lock* lock, apr_file_t** fd, const char* str1, const char* ip_port, const char* uri, int mode, const char* hostname, char* request_id, request_rec *r, const char* waf_policy_id, const char* waf_policy_scope, const char* waf_policy_scope_name) {
+static void send_waf_log(struct waf_lock* lock, apr_file_t** fd, const char* str1, const char* ip_port, const char* uri, int mode, const char* hostname, char* request_id, request_rec *r, const char* waf_policy_id, const char* waf_policy_scope, const char* waf_policy_scope_name, const char* waf_signature) {
     char waf_filename[1024] = "";
     char waf_line[1024] = "";
     char waf_id[1024] = "";
@@ -352,12 +333,18 @@ static void send_waf_log(struct waf_lock* lock, apr_file_t** fd, const char* str
     get_field_value("[id ", "]", str1, waf_id);
     get_field_value("[line ", "]", str1, waf_line);
     get_field_value("[msg ", "]", str1, waf_message);
-    get_pcre_error_message(str1, waf_message);
     get_field_value("[data ", "]", str1, waf_data);
 	get_ip_port(ip_port, waf_ip, waf_port);
     get_detail_message(str1, waf_detail_message); 
     get_short_filename(waf_filename);
-    get_ruleset_type_version(msc_waf_signature, waf_ruleset_type, waf_ruleset_version); 
+    get_ruleset_type_version(waf_signature, waf_ruleset_type, waf_ruleset_version); 
+
+    // overwrite message with pcre limits exceeded message if the the orig_string contained a pcre limits exceeded message
+    if (str1 && (strstr(str1, " Execution error - PCRE limits exceeded ") != NULL)) {
+        // since message is preallocated as 1024, so don't need to check boundary here.
+        strcpy(waf_message, " Execution error - PCRE limits exceeded ");;
+    }
+
 
     // Format UTC timestamp
     time_t rawtime = time(NULL);
@@ -485,7 +472,7 @@ static void internal_log_ex(request_rec *r, directory_config *dcfg, modsec_rec *
         const char* scope = apr_table_get(r->notes, WAF_POLICY_SCOPE);
         const char* scope_name = apr_table_get(r->notes, WAF_POLICY_SCOPE_NAME);
 
-        send_waf_log(wafjsonlog_lock, &msc_waf_log_fd, str1, r->useragent_ip ? r->useragent_ip : r->connection->client_ip, log_escape(msr->mp, r->uri), (!msr->allow_scope) ? dcfg->is_enabled : msr->allow_scope, r->hostname, r->log_id, r, dcfg->waf_policy_id, scope ? scope : "", scope_name ? scope_name : "");
+        send_waf_log(wafjsonlog_lock, &msc_waf_log_fd, str1, r->useragent_ip ? r->useragent_ip : r->connection->client_ip, log_escape(msr->mp, r->uri), (!msr->allow_scope) ? dcfg->is_enabled : msr->allow_scope, r->hostname, r->log_id, r, dcfg->waf_policy_id, scope ? scope : "", scope_name ? scope_name : "", dcfg->waf_signature);
 #endif
 
 #if AP_SERVER_MAJORVERSION_NUMBER > 1 && AP_SERVER_MINORVERSION_NUMBER > 2
