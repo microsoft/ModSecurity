@@ -849,7 +849,7 @@ static int msre_op_validateHash_execute(modsec_rec *msr, msre_rule *rule, msre_v
                 rule->filename != NULL ? rule->filename : "-",
                 rule->line_num,rc, my_error_msg);
 
-        msr_log(msr, 3, "%s.", *error_msg);
+        msr_log_with_errorcode(msr, 3, 1, "%s.", *error_msg);
 
         return 0; /* No match. */
     }
@@ -1089,7 +1089,7 @@ static int msre_op_rx_execute(modsec_rec *msr, msre_rule *rule, msre_var *var, c
                 rule->filename != NULL ? rule->filename : "-",
                 rule->line_num,rc, my_error_msg);
 
-        msr_log(msr, 3, "%s.", *error_msg);
+        msr_log_with_errorcode(msr, 3, 1, "%s.", *error_msg);
 
         return 0; /* No match. */
     }

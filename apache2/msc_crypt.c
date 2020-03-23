@@ -399,7 +399,7 @@ int do_hash_method(modsec_rec *msr, char *link, int type)   {
                                     em[i]->param,rc, my_error_msg);
 
                             if (msr->txcfg->debuglog_level >= 4)
-                                msr_log(msr, 4, "%s.", error_msg);
+                                msr_log_with_errorcode(msr, 4, 1, "%s.", error_msg);
 
                             return 0; /* No match. */
                         }
@@ -454,7 +454,7 @@ int do_hash_method(modsec_rec *msr, char *link, int type)   {
                                     em[i]->param,rc, my_error_msg);
 
                             if (msr->txcfg->debuglog_level >= 4)
-                                msr_log(msr, 4, "%s.", error_msg);
+                                msr_log_with_errorcode(msr, 4, 1, "%s.", error_msg);
 
                             return 0; /* No match. */
                         }
@@ -509,7 +509,7 @@ int do_hash_method(modsec_rec *msr, char *link, int type)   {
                                     em[i]->param,rc, my_error_msg);
 
                             if (msr->txcfg->debuglog_level >= 4)
-                                msr_log(msr, 4, "%s.", error_msg);
+                                msr_log_with_errorcode(msr, 4, 1, "%s.", error_msg);
 
                             return 0; /* No match. */
                         }
@@ -564,7 +564,7 @@ int do_hash_method(modsec_rec *msr, char *link, int type)   {
                                     em[i]->param,rc, my_error_msg);
 
                             if (msr->txcfg->debuglog_level >= 4)
-                                msr_log(msr, 4, "%s.", error_msg);
+                                msr_log_with_errorcode(msr, 4, 1, "%s.", error_msg);
 
                             return 0; /* No match. */
                         }
@@ -619,7 +619,7 @@ int do_hash_method(modsec_rec *msr, char *link, int type)   {
                                     em[i]->param,rc, my_error_msg);
 
                             if (msr->txcfg->debuglog_level >= 4)
-                                msr_log(msr, 4, "%s.", error_msg);
+                                msr_log_with_errorcode(msr, 4, 1, "%s.", error_msg);
 
                             return 0; /* No match. */
                         }
