@@ -386,7 +386,11 @@ static void send_waf_log(struct waf_lock* lock, apr_file_t** fd, const char* str
  * required bytes will be escaped.
  */
 static void internal_log_ex(request_rec *r, directory_config *dcfg, modsec_rec *msr,
+#ifdef WAF_JSON_LOGGING_ENABLE
     int level, int fixup, enum ERROR_ENUM error_code, const char *text, va_list ap)
+#else
+    int level, int fixup, const char *text, va_list ap)
+#endif
 {
     apr_size_t nbytes, nbytes_written;
     apr_file_t *debuglog_fd = NULL;
@@ -505,10 +509,15 @@ void msr_log(modsec_rec *msr, int level, const char *text, ...) {
     va_list ap;
 
     va_start(ap, text);
+#ifdef WAF_JSON_LOGGING_ENABLE
     internal_log_ex(msr->r, msr->txcfg, msr, level, 0, 0, text, ap);
+#else
+    internal_log_ex(msr->r, msr->txcfg, msr, level, 0, text, ap);
+#endif
     va_end(ap);
 }
 
+#ifdef WAF_JSON_LOGGING_ENABLE
 /**
  * Logs one message with error code at the given level to the debug log (and to the
  * Apache error log if the message is important enough.
@@ -520,6 +529,7 @@ void msr_log_with_errorcode(modsec_rec *msr, int level, enum ERROR_ENUM error_co
     internal_log_ex(msr->r, msr->txcfg, msr, level, 0, error_code, text, ap);
     va_end(ap);
 }
+#endif
 
 /**
  * Logs one message at level 3 to the debug log and to the
