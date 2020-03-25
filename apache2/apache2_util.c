@@ -539,7 +539,11 @@ void msr_log_error(modsec_rec *msr, const char *text, ...) {
     va_list ap;
 
     va_start(ap, text);
+#ifdef WAF_JSON_LOGGING_ENABLE
     internal_log_ex(msr->r, msr->txcfg, msr, 3, 1, 0, text, ap);
+#else
+    internal_log_ex(msr->r, msr->txcfg, msr, 3, 1, text, ap);
+#endif
     va_end(ap);
 }
 
@@ -553,7 +557,11 @@ void msr_log_warn(modsec_rec *msr, const char *text, ...) {
     va_list ap;
 
     va_start(ap, text);
+#ifdef WAF_JSON_LOGGING_ENABLE
     internal_log_ex(msr->r, msr->txcfg, msr, 4, 1, 0, text, ap);
+#else
+    internal_log_ex(msr->r, msr->txcfg, msr, 4, 1, text, ap);
+#endif
     va_end(ap);
 }
 
