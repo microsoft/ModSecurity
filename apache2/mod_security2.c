@@ -1084,6 +1084,13 @@ static int hook_request_late(request_rec *r) {
                 r->connection->keepalive = AP_CONN_CLOSE;
                 return HTTP_BAD_REQUEST;
                 break;
+            case -8 : /* JSON body does not parse */
+                if (my_error_msg != NULL) {
+                    msr_log(msr, 4, "%s", my_error_msg);
+                }
+                r->connection->keepalive = AP_CONN_CLOSE;
+                return HTTP_BAD_REQUEST;
+                break;
             default :
                 /* allow through */
                 break;
