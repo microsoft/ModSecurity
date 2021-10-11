@@ -273,6 +273,11 @@ extern DSOLOCAL char *msc_waf_lock_group;
 
 #define NBSP                            160
 
+
+#define BODY_PARSER_ERR_GENERIC         -1
+#define BODY_PARSER_ERR_INVALID_BODY    -8
+#define BODY_PARSER_OK_SUCCESS          1
+
 struct rule_exception {
     int                  type;
     const char          *param;

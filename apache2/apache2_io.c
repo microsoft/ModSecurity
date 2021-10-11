@@ -193,7 +193,7 @@ apr_status_t read_request_body(modsec_rec *msr, char **error_msg) {
         msr_log(msr, 4, "Input filter: Reading request body.");
     }
     if (modsecurity_request_body_start(msr, error_msg) < 0) {
-        return -1;
+        return BODY_PARSER_ERR_GENERIC;
     }
 
     finished_reading = 0;
@@ -226,7 +226,7 @@ apr_status_t read_request_body(modsec_rec *msr, char **error_msg) {
                     return -2;
                 default :
                     *error_msg = apr_psprintf(msr->mp, "Error reading request body: %s", get_apr_error(msr->mp, rc));
-                    return -1;
+                    return BODY_PARSER_ERR_GENERIC;
             }
         }
 
@@ -321,7 +321,7 @@ apr_status_t read_request_body(modsec_rec *msr, char **error_msg) {
                     }
 
                     if((msr->txcfg->is_enabled == MODSEC_ENABLED) && (msr->txcfg->if_limit_action == REQUEST_BODY_LIMIT_ACTION_REJECT))
-                        return -1;
+                        return BODY_PARSER_ERR_GENERIC;
                 }
 
             }

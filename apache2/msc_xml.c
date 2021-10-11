@@ -36,7 +36,7 @@ int xml_init(modsec_rec *msr, char **error_msg) {
         entity = xmlParserInputBufferCreateFilenameDefault(xml_unload_external_entity);
     }
 
-    return 1;
+    return BODY_PARSER_OK_SUCCESS;
 }
 
 #if 0
@@ -59,7 +59,7 @@ static void xml_receive_sax_error(void *data, const char *msg, ...) {
  * Feed one chunk of data to the XML parser.
  */
 int xml_process_chunk(modsec_rec *msr, const char *buf, unsigned int size, char **error_msg) {
-    if (error_msg == NULL) return -1;
+    if (error_msg == NULL) return BODY_PARSER_ERR_GENERIC;
     *error_msg = NULL;
 
     /* We want to initialise our parsing context here, to
@@ -87,7 +87,7 @@ int xml_process_chunk(modsec_rec *msr, const char *buf, unsigned int size, char 
         msr->xml->parsing_ctx = xmlCreatePushParserCtxt(NULL, NULL, buf, size, "body.xml");
         if (msr->xml->parsing_ctx == NULL) {
             *error_msg = apr_psprintf(msr->mp, "XML: Failed to create parsing context.");
-            return -1;
+            return BODY_PARSER_ERR_GENERIC;
         }
     } else {
 
@@ -96,18 +96,18 @@ int xml_process_chunk(modsec_rec *msr, const char *buf, unsigned int size, char 
         xmlParseChunk(msr->xml->parsing_ctx, buf, size, 0);
         if (msr->xml->parsing_ctx->wellFormed != 1) {
             *error_msg = apr_psprintf(msr->mp, "XML: Failed parsing document.");
-            return -1;
+            return BODY_PARSER_ERR_INVALID_BODY;
         }
     }
 
-    return 1;
+    return BODY_PARSER_OK_SUCCESS;
 }
 
 /**
  * Finalise XML parsing.
  */
 int xml_complete(modsec_rec *msr, char **error_msg) {
-    if (error_msg == NULL) return -1;
+    if (error_msg == NULL) return BODY_PARSER_ERR_GENERIC;
     *error_msg = NULL;
 
     /* Only if we have a context, meaning we've done some work. */
@@ -126,11 +126,11 @@ int xml_complete(modsec_rec *msr, char **error_msg) {
 
         if (msr->xml->well_formed != 1) {
             *error_msg = apr_psprintf(msr->mp, "XML: Failed parsing document.");
-            return -1;
+            return BODY_PARSER_ERR_INVALID_BODY;
         }
     }
 
-    return 1;
+    return BODY_PARSER_OK_SUCCESS;
 }
 
 /**
@@ -149,5 +149,5 @@ apr_status_t xml_cleanup(modsec_rec *msr) {
         msr->xml->doc = NULL;
     }
 
-    return 1;
+    return BODY_PARSER_OK_SUCCESS;
 }
