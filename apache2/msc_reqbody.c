@@ -697,7 +697,7 @@ apr_status_t modsecurity_request_body_end(modsec_rec *msr, char **error_msg) {
                 if (msr->txcfg->debuglog_level >= 4) {
                     msr_log(msr, 4, "%s", *error_msg);
                 }
-                return -1;
+                return BODY_PARSER_ERR_INVALID_BODY;
             }
 
             if (multipart_get_arguments(msr, "BODY", msr->arguments) < 0) {
@@ -705,24 +705,25 @@ apr_status_t modsecurity_request_body_end(modsec_rec *msr, char **error_msg) {
                 msr->msc_reqbody_error = 1;
                 msr->msc_reqbody_error_msg = *error_msg;
                 msr_log(msr, 2, "%s", *error_msg);
-                return -1;
+                return BODY_PARSER_ERR_INVALID_BODY;
             }
         }
         else if (strcmp(msr->msc_reqbody_processor, "JSON") == 0) {
 #ifdef WITH_YAJL
-            if (json_complete(msr, &my_error_msg) < 0 && msr->msc_reqbody_length > 0) {
+            int json_parser_response = json_complete(msr, &my_error_msg);
+            if (json_parser_response < 0 && msr->msc_reqbody_length > 0) {
                 *error_msg = apr_psprintf(msr->mp, "JSON parser error: %s", my_error_msg);
                 msr->msc_reqbody_error = 1;
                 msr->msc_reqbody_error_msg = *error_msg;
                 msr_log(msr, 2, "%s", *error_msg);
-                 return -1;
+                 return json_parser_response;
              }
 #else
             *error_msg = apr_psprintf(msr->mp, "JSON support was not enabled");
             msr->msc_reqbody_error = 1;
             msr->msc_reqbody_error_msg = *error_msg;
             msr_log(msr, 2, "%s", *error_msg);
-            return -1;
+            return BODY_PARSER_ERR_GENERIC;
 #endif
 
         }
@@ -730,12 +731,13 @@ apr_status_t modsecurity_request_body_end(modsec_rec *msr, char **error_msg) {
             return modsecurity_request_body_end_urlencoded(msr, error_msg);
         }
         else if (strcmp(msr->msc_reqbody_processor, "XML") == 0) {
-            if (xml_complete(msr, &my_error_msg) < 0) {
+            int xml_parser_response = xml_complete(msr, &my_error_msg);
+            if (xml_parser_response < 0) {
                 *error_msg = apr_psprintf(msr->mp, "XML parser error: %s", my_error_msg);
                 msr->msc_reqbody_error = 1;
                 msr->msc_reqbody_error_msg = *error_msg;
                 msr_log(msr, 2, "%s", *error_msg);
-                return -1;
+                return xml_parser_response;
             }
         }
     } else if (msr->txcfg->reqbody_buffering != REQUEST_BODY_FORCEBUF_OFF) {
@@ -746,7 +748,7 @@ apr_status_t modsecurity_request_body_end(modsec_rec *msr, char **error_msg) {
     /* Note the request body no files length. */
     msr_log(msr, 4, "Request body no files length: %" APR_SIZE_T_FMT, msr->msc_reqbody_no_files_length);
 
-    return 1;
+    return BODY_PARSER_OK_SUCCESS;
 }
 
 /**
