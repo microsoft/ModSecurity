@@ -292,7 +292,7 @@ int json_process_chunk(modsec_rec *msr, const char *buf, unsigned int size, char
 int json_complete(modsec_rec *msr, char **error_msg) {
     char *json_data = (char *) NULL;
 
-    if (error_msg == NULL) return -1;
+    if (error_msg == NULL) return BODY_PARSER_ERR_GENERIC;
     *error_msg = NULL;
 
     /* Wrap up the parsing process */
@@ -301,10 +301,10 @@ int json_complete(modsec_rec *msr, char **error_msg) {
         char *yajl_err = yajl_get_error(msr->json->handle, 0, NULL, 0);
         *error_msg = apr_pstrdup(msr->mp, yajl_err);
         yajl_free_error(msr->json->handle, yajl_err);
-        return -1;
+        return BODY_PARSER_ERR_INVALID_BODY;
     }
 
-    return 1;
+    return BODY_PARSER_OK_SUCCESS;
 }
 
 /**
