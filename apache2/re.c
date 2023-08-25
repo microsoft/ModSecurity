@@ -2237,12 +2237,12 @@ char *msre_format_metadata(modsec_rec *msr, msre_actionset *actionset) {
          * NOTE: 512 actual data + 9 bytes of label = 521
          */
         if (strlen(logdata) > 521) {
-            logdata[517] = '.';
-            logdata[518] = '.';
-            logdata[519] = '.';
-            logdata[520] = '"';
-            logdata[521] = ']';
-            logdata[522] = '\0';
+            logdata[517] = '.'; // CodeQL [SM01947] Suppress false positive: The logdata pointer is re-assigned and this operation is guarded by a strlen check. The original logdata char* declaration is statically initialized to the empty string, hence the size of the array is assumed to be 1 byte by CodeQL.
+            logdata[518] = '.'; // CodeQL [SM01947] Suppress false positive: The logdata pointer is re-assigned and this operation is guarded by a strlen check. The original logdata char* declaration is statically initialized to the empty string, hence the size of the array is assumed to be 1 byte by CodeQL.
+            logdata[519] = '.'; // CodeQL [SM01947] Suppress false positive: The logdata pointer is re-assigned and this operation is guarded by a strlen check. The original logdata char* declaration is statically initialized to the empty string, hence the size of the array is assumed to be 1 byte by CodeQL.
+            logdata[520] = '"'; // CodeQL [SM01947] Suppress false positive: The logdata pointer is re-assigned and this operation is guarded by a strlen check. The original logdata char* declaration is statically initialized to the empty string, hence the size of the array is assumed to be 1 byte by CodeQL.
+            logdata[521] = ']'; // CodeQL [SM01947] Suppress false positive: The logdata pointer is re-assigned and this operation is guarded by a strlen check. The original logdata char* declaration is statically initialized to the empty string, hence the size of the array is assumed to be 1 byte by CodeQL.
+            logdata[522] = '\0'; // CodeQL [SM01947] Suppress false positive: The logdata pointer is re-assigned and this operation is guarded by a strlen check. The original logdata char* declaration is statically initialized to the empty string, hence the size of the array is assumed to be 1 byte by CodeQL.
         }
     }
     if ((actionset->severity >= 0)&&(actionset->severity <= 7)) {
