@@ -2229,21 +2229,15 @@ char *msre_format_metadata(modsec_rec *msr, msre_actionset *actionset) {
         var->value_len = strlen(actionset->logdata);
         expand_macros(msr, var, NULL, msr->mp);
 
-        logdata = apr_psprintf(msr->mp, " [data \"%s",
-                log_escape_hex(msr->mp, (unsigned char *)var->value, var->value_len));
-        logdata = apr_pstrcat(msr->mp, logdata, "\"]", NULL);
-
-        /* If it is > 512 bytes, then truncate at 512 with ellipsis.
-         * NOTE: 512 actual data + 9 bytes of label = 521
+        /* If logdata is > 512 bytes, then truncate it at 509 and add ellipsis to limit it at 512
+         * NOTE: 512 actual data + 10 bytes of label(8 in prefix, 2 in suffix) = 522
          */
-        if (strlen(logdata) > 521) {
-            logdata[517] = '.'; // CodeQL [SM01947] Suppress false positive: The logdata pointer is re-assigned and this operation is guarded by a strlen check.
-            logdata[518] = '.'; // CodeQL [SM01947] Suppress false positive: The logdata pointer is re-assigned and this operation is guarded by a strlen check.
-            logdata[519] = '.'; // CodeQL [SM01947] Suppress false positive: The logdata pointer is re-assigned and this operation is guarded by a strlen check.
-            logdata[520] = '"'; // CodeQL [SM01947] Suppress false positive: The logdata pointer is re-assigned and this operation is guarded by a strlen check.
-            logdata[521] = ']'; // CodeQL [SM01947] Suppress false positive: The logdata pointer is re-assigned and this operation is guarded by a strlen check.
-            logdata[522] = '\0'; // CodeQL [SM01947] Suppress false positive: The logdata pointer is re-assigned and this operation is guarded by a strlen check.
-        }
+        unsigned int LIMIT = 512;
+        char* suffix = (var->value_len > LIMIT) ? "...\"]" : "\"]";
+
+        logdata = apr_psprintf(msr->mp, " [data \"%s",
+                        log_escape_hex(msr->mp, (unsigned char *)var->value, (var->value_len > LIMIT) ? 509 : var->value_len));
+        logdata = apr_pstrcat(msr->mp, logdata, suffix, NULL); 
     }
     if ((actionset->severity >= 0)&&(actionset->severity <= 7)) {
         severity = apr_psprintf(msr->mp, " [severity \"%s\"]",
