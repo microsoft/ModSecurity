@@ -714,7 +714,6 @@ int msc_remote_add_rules_from_uri(cmd_parms *orig_parms,
         if (plain_text[len]  == '\n')
         {
             const char *rule = NULL;
-            apr_size_t tmp = len;
             char *cmd_name = NULL;
             char *word = NULL;
             const command_rec *cmd;
