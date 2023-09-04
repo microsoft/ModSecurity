@@ -2194,7 +2194,9 @@ char *msre_format_metadata(modsec_rec *msr, msre_actionset *actionset) {
     char *version = "";
     char *tags = "";
     char *fn = "";
+    char *suffix = "";
     int k;
+    unsigned int logdata_char_limit = 512;
 
     if (actionset == NULL) return "";
 
@@ -2232,11 +2234,10 @@ char *msre_format_metadata(modsec_rec *msr, msre_actionset *actionset) {
         /* If logdata is > 512 bytes, then truncate it at 509 and add ellipsis to limit it at 512
          * NOTE: 512 actual data + 10 bytes of label(8 in prefix, 2 in suffix) = 522
          */
-        unsigned int LIMIT = 512;
-        char* suffix = (var->value_len > LIMIT) ? "...\"]" : "\"]";
+        suffix = (var->value_len > logdata_char_limit) ? "...\"]" : "\"]";
 
         logdata = apr_psprintf(msr->mp, " [data \"%s",
-                        log_escape_hex(msr->mp, (unsigned char *)var->value, (var->value_len > LIMIT) ? 509 : var->value_len));
+                        log_escape_hex(msr->mp, (unsigned char *)var->value, (var->value_len > logdata_char_limit) ? 509 : var->value_len));
         logdata = apr_pstrcat(msr->mp, logdata, suffix, NULL); 
     }
     if ((actionset->severity >= 0)&&(actionset->severity <= 7)) {
