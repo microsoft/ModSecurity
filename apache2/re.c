@@ -2194,7 +2194,9 @@ char *msre_format_metadata(modsec_rec *msr, msre_actionset *actionset) {
     char *version = "";
     char *tags = "";
     char *fn = "";
+    char *suffix = "";
     int k;
+    unsigned int logdata_char_limit = 512;
 
     if (actionset == NULL) return "";
 
@@ -2229,21 +2231,14 @@ char *msre_format_metadata(modsec_rec *msr, msre_actionset *actionset) {
         var->value_len = strlen(actionset->logdata);
         expand_macros(msr, var, NULL, msr->mp);
 
-        logdata = apr_psprintf(msr->mp, " [data \"%s",
-                log_escape_hex(msr->mp, (unsigned char *)var->value, var->value_len));
-        logdata = apr_pstrcat(msr->mp, logdata, "\"]", NULL);
-
-        /* If it is > 512 bytes, then truncate at 512 with ellipsis.
-         * NOTE: 512 actual data + 9 bytes of label = 521
+        /* If logdata is > 512 bytes, then truncate it at 509 and add ellipsis to limit it at 512
+         * NOTE: 512 actual data + 10 bytes of label(8 in prefix, 2 in suffix) = 522
          */
-        if (strlen(logdata) > 521) {
-            logdata[517] = '.';
-            logdata[518] = '.';
-            logdata[519] = '.';
-            logdata[520] = '"';
-            logdata[521] = ']';
-            logdata[522] = '\0';
-        }
+        suffix = (var->value_len > logdata_char_limit) ? "...\"]" : "\"]";
+
+        logdata = apr_psprintf(msr->mp, " [data \"%s",
+                        log_escape_hex(msr->mp, (unsigned char *)var->value, (var->value_len > logdata_char_limit) ? 509 : var->value_len));
+        logdata = apr_pstrcat(msr->mp, logdata, suffix, NULL); 
     }
     if ((actionset->severity >= 0)&&(actionset->severity <= 7)) {
         severity = apr_psprintf(msr->mp, " [severity \"%s\"]",
