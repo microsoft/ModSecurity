@@ -1812,7 +1812,7 @@ static int msre_op_gsbLookup_execute(modsec_rec *msr, msre_rule *rule, msre_var 
 
                         }
 
-                        url = apr_palloc(rule->ruleset->mp, strlen(canon));
+                        url = apr_pcalloc(rule->ruleset->mp, strlen(canon) + 1);
                         count_slash = 0;
 
                         while(*canon != '\0') {
