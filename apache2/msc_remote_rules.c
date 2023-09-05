@@ -655,9 +655,9 @@ int msc_remote_add_rules_from_uri(cmd_parms *orig_parms,
 #ifdef WITH_REMOTE_RULES
     struct msc_curl_memory_buffer_t downloaded_content;
     unsigned char *plain_text = NULL;
-    int len = 0;
-    int start = 0;
-    int end = 0;
+    apr_size_t len = 0;
+    apr_size_t start = 0;
+    apr_size_t end = 0;
     int added_rules = 0;
     int res = 0;
     apr_size_t plain_text_len = 0;
@@ -714,7 +714,6 @@ int msc_remote_add_rules_from_uri(cmd_parms *orig_parms,
         if (plain_text[len]  == '\n')
         {
             const char *rule = NULL;
-            int tmp = len;
             char *cmd_name = NULL;
             char *word = NULL;
             const command_rec *cmd;
