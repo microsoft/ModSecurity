@@ -1645,7 +1645,7 @@ static int msre_op_gsbLookup_execute(modsec_rec *msr, msre_rule *rule, msre_var 
     unsigned int match_length;
     unsigned int canon_length;
     int rv, i, ret, count_slash;
-    unsigned int j = 0;
+    size_t j = 0;
     unsigned int size = var->value_len;
     char *base = NULL, *domain = NULL, *savedptr = NULL;
     char *str = NULL, *canon = NULL, *dot = NULL;
