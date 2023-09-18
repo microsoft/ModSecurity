@@ -1645,14 +1645,13 @@ static int msre_op_gsbLookup_execute(modsec_rec *msr, msre_rule *rule, msre_var 
     unsigned int match_length;
     unsigned int canon_length;
     int rv, i, ret, count_slash;
-    unsigned int j = 0;
+    size_t j = 0, d_pos = 0, s_pos = 0;
     unsigned int size = var->value_len;
     char *base = NULL, *domain = NULL, *savedptr = NULL;
     char *str = NULL, *canon = NULL, *dot = NULL;
-    char *data = NULL, *ptr = NULL, *url = NULL;
+    char *data = NULL, *ptr = NULL, *url = NULL, *dot_position = NULL;
     int capture, domain_len;
-    int d_pos = -1;
-    int s_pos = -1;
+    bool s_pos_set = false, d_pos_set = false;
 
     if (error_msg == NULL) return -1;
     *error_msg = NULL;
@@ -1849,6 +1848,7 @@ static int msre_op_gsbLookup_execute(modsec_rec *msr, msre_rule *rule, msre_var 
                 for(j=0; j<strlen(match); j++)    {
                     if(match[j] == '/')    {
                         s_pos = j;
+                        s_pos_set = true;
                         break;
                     }
                 }
@@ -1863,9 +1863,15 @@ static int msre_op_gsbLookup_execute(modsec_rec *msr, msre_rule *rule, msre_var 
                             domain++;
                             domain_len = strlen(domain);
 
-                            d_pos = strchr(domain,'.') - domain;
+                            dot_position = strchr(domain,'.');
 
-                            if(s_pos >= 0 && d_pos >= 0 && d_pos > s_pos)
+                            if (dot_position != NULL)
+                            {
+                                d_pos = strchr(domain,'.') - domain;
+                                d_pos_set = true;
+                            }
+
+                            if(s_pos_set && d_pos_set && d_pos > s_pos)
                                 break;
 
                             if(*domain != '/')  {
