@@ -252,6 +252,7 @@ TreeNode *SetParentNode(TreeNode *node, TreeNode *new_node, CPTTree *tree)  {
 int InsertNetmask(TreeNode *node, TreeNode *parent, TreeNode *new_node,
         CPTTree *tree, unsigned char netmask, unsigned char bitlen) {
     int i;
+    unsigned int netmask_int = (unsigned int) netmask;
 
     if (netmask != NETMASK_256-1 && netmask != NETMASK_128) {
         if ((netmask != NETMASK_32 || (netmask == NETMASK_32 && bitlen != NETMASK_32))) {
@@ -259,7 +260,7 @@ int InsertNetmask(TreeNode *node, TreeNode *parent, TreeNode *new_node,
             node = new_node;
             parent = new_node->parent;
 
-            while (parent != NULL && netmask < (parent->bit + 1)) {
+            while (parent != NULL && netmask_int < (parent->bit + 1)) {
                 node = parent;
                 parent = parent->parent;
             }
@@ -298,7 +299,7 @@ TreeNode *CPTAddElement(unsigned char *ipdata, unsigned int ip_bitmask, CPTTree 
     unsigned char bitlen = 0;
     int bit_validation = 0, test_bit = 0;
     int i = 0, j = 0, temp = 0;
-    unsigned int x, y;
+    unsigned int x, y, netmask_int = (unsigned int) netmask;
     TreeNode *node = NULL, *new_node = NULL;
     TreeNode *parent = NULL, *i_node = NULL;
     TreeNode *bottom_node = NULL;
@@ -408,7 +409,7 @@ TreeNode *CPTAddElement(unsigned char *ipdata, unsigned int ip_bitmask, CPTTree 
                     return node;
 
                 parent = node->parent;
-                while (parent != NULL && netmask < (parent->bit + 1)) {
+                while (parent != NULL && netmask_int < (parent->bit + 1)) {
                     node = parent;
                     parent = parent->parent;
                 }
