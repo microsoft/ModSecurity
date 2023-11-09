@@ -391,7 +391,7 @@ static char *msre_action_id_validate(msre_engine *engine, apr_pool_t *mp, msre_a
     int id;
 
     if(action != NULL && action->param != NULL) {
-        for(id=0;id<strlen(action->param);id++) {
+        for(id=0;action->param[id];id++) {
             if(!apr_isdigit(action->param[id]))
                 return apr_psprintf(mp, "ModSecurity: Invalid value for action ID: %s", action->param);
         }
