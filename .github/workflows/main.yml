@@ -1,9 +1,11 @@
 name: CI
 
-# Controls when the workflow will run
+# Workflow token permissions. Needed for az acr login.
 permissions:
   id-token: write
   contents: read
+
+# Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the waf_nginx branch
   push:
@@ -23,26 +25,31 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Logging into appgwreg
-      # Logs into Azure Registry
+      # Logs into Azure. Can't use other alternatives because they lack security features.
       - name: Azure Login
-        uses: Azure/login@v2.0.0
+        uses: Azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-                
-      # Runs make commands
+
+      # Pull docker image and compile the code.
       - name: Pull Image and Compile
         env:
           REGISTRY_NAME: ${{ secrets.REGISTRY_NAME }}
-          REGISTRY_DOMAIN: ${{ secrets.REGISTRY_DOMAIN }}
-          
         run: |
           az acr login --name $REGISTRY_NAME
-          docker pull $AZURE_REGISTRY_DOMAIN/modsecurity:latest
+        
+          docker pull ${REGISTRY_NAME}.azurecr.io/modsecurity:latest
           docker-compose run --rm autoconf
           docker-compose run --rm configure
           docker-compose run --rm make
+          docker logout ${REGISTRY_NAME}.azurecr.io
+
+      # Reset credentials stored by az acr login if the previous step failed midway.
+      - name: Cleanup on failure
+        if: failure()
+        env:
+          REGISTRY_NAME: ${{ secrets.REGISTRY_NAME }}
+        run: |
+          docker logout ${REGISTRY_NAME}.azurecr.io
