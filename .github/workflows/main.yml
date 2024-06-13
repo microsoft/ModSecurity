@@ -1,5 +1,10 @@
 name: CI
 
+# Workflow token permissions. Needed for az acr login.
+permissions:
+  id-token: write
+  contents: read
+
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the waf_nginx branch
@@ -14,29 +19,37 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: ci
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Logging into appgwreg
-      # Logs into Azure Registry
-      - name: Docker Login
-        uses: docker/login-action@v1.10.0
+      # Logs into Azure. Can't use other alternatives because they lack security features.
+      - name: Azure Login
+        uses: Azure/login@v2
         with:
-          registry: appgwreg.azurecr.io
-          # Username used to log against the Docker registry
-          username: ${{ secrets.DOCKER_USERNAME }}
-          # Password or personal access token used to log against the Docker registry
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          # Log out from the Docker registry at the end of a job
-          logout: true
-      # Runs make commands
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Pull docker image and compile the code.
       - name: Pull Image and Compile
+        env:
+          REGISTRY_NAME: ${{ secrets.REGISTRY_NAME }}
         run: |
-          docker pull appgwreg.azurecr.io/modsecurity:latest
+          az acr login --name $REGISTRY_NAME
+        
+          docker pull ${REGISTRY_NAME}.azurecr.io/modsecurity:latest
           docker-compose run --rm autoconf
           docker-compose run --rm configure
           docker-compose run --rm make
+          docker logout ${REGISTRY_NAME}.azurecr.io
+
+      # Reset credentials stored by az acr login if the previous step failed midway.
+      - name: Cleanup on failure
+        if: failure()
+        env:
+          REGISTRY_NAME: ${{ secrets.REGISTRY_NAME }}
+        run: |
+          docker logout ${REGISTRY_NAME}.azurecr.io
