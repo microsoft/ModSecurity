@@ -482,16 +482,6 @@ static void internal_log_ex(request_rec *r, directory_config *dcfg, modsec_rec *
         send_waf_log(wafjsonlog_lock, &msc_waf_log_fd, str1, r->useragent_ip ? r->useragent_ip : r->connection->client_ip, log_escape(msr->mp, r->uri), (!msr->allow_scope) ? dcfg->is_enabled : msr->allow_scope, r->hostname, r->log_id, r, dcfg->waf_policy_id, scope ? scope : "", scope_name ? scope_name : "", dcfg->waf_signature, error_code);
 #endif
 
-#if AP_SERVER_MAJORVERSION_NUMBER > 1 && AP_SERVER_MINORVERSION_NUMBER > 2
-	ap_log_rerror(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, r,
-            "[client %s] ModSecurity: %s%s [uri \"%s\"]%s%s", r->useragent_ip ? r->useragent_ip : r->connection->client_ip, str1,
-            hostname, log_escape(msr->mp, r->uri), unique_id, requestheaderhostname);
-#else
-        ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, 0, r->server,
-                "[client %s] ModSecurity: %s%s [uri \"%s\"]%s%s", msr->remote_addr ? msr->remote_addr : r->connection->remote_ip, str1,
-                hostname, log_escape(msr->mp, r->uri), unique_id, requestheaderhostname);
-#endif
-
         /* Add this message to the list. */
         if (msr != NULL) {
             /* Force relevency if this is an alert */
